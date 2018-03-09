@@ -2,6 +2,8 @@ defmodule Procrastinator.Backend.SQS do
   alias ExAws.SQS
   alias Procrastinator.Backend.SQS.Supervisor, as: SQSSupervisor
 
+  @behaviour Procrastinator.Backend
+
   def start_link(callback) do
     SQSSupervisor.start_link(config(:queues),
                              config(:workers_per_queue, 1),

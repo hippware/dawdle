@@ -1,8 +1,10 @@
 defmodule Procrastinator.Backend.Local do
   use GenServer
 
+  @behaviour Procrastinator.Backend
+
   def start_link(callback) do
-    GenServer.start_link(__MODULE__, __MODULE__, callback)
+    GenServer.start_link(__MODULE__, callback, name: __MODULE__)
   end
 
   def send(message, delay) do
