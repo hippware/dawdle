@@ -12,8 +12,6 @@ defmodule Procrastinator.Backend.SQS do
 
   @group_id "procrastinator"
 
-  def init, do: :ok
-
   def send(message, delay) do
     get_queue()
     |> SQS.send_message(

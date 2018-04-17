@@ -1,21 +1,15 @@
 defmodule Procrastinator do
-  @moduledoc """
+  @moduledoc ~S"""
   Documentation for Procrastinator.
   """
 
   @doc """
-  Hello world.
-
-  ## Examples
-
-      iex> Procrastinator.hello
-      :world
-
   """
-  def start_link(callback) do
-    backend().start_link(callback)
-  end
+  def start_link(callback), do: backend().start_link(callback)
 
+  @doc """
+  Send a message to be fired back after at least the specified delay in ms
+  """
   @spec send(term(), non_neg_integer()) :: :ok | {:error, term()}
   def send(message, delay) do
     backend().send(message, delay)
