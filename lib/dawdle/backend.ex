@@ -1,6 +1,6 @@
-defmodule Procrastinator.Backend do
+defmodule Dawdle.Backend do
   @moduledoc """
-  Behaviour module for Procrastinator backend implementation
+  Behaviour module for Dawdle backend implementation
   """
 
   @type message :: binary()

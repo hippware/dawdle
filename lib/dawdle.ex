@@ -1,6 +1,6 @@
-defmodule Procrastinator do
+defmodule Dawdle do
   @moduledoc ~S"""
-  Documentation for Procrastinator.
+  Documentation for Dawdle.
   """
 
   @doc """
@@ -16,6 +16,6 @@ defmodule Procrastinator do
   end
 
   defp backend do
-    Confex.get_env(:procrastinator, :backend, Procrastinator.Backend.Local)
+    Confex.get_env(:dawdle, :backend, Dawdle.Backend.Local)
   end
 end

@@ -1,7 +1,7 @@
-defmodule Procrastinator.Backend.Local do
+defmodule Dawdle.Backend.Local do
   use GenServer
 
-  @behaviour Procrastinator.Backend
+  @behaviour Dawdle.Backend
 
   def start_link(callback) do
     IO.inspect "Using LOCAL backend"

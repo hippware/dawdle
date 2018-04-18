@@ -1,6 +1,6 @@
-defmodule Procrastinator.Backend.SQS.Poller do
+defmodule Dawdle.Backend.SQS.Poller do
   alias ExAws.SQS
-  alias Procrastinator.Backend.SQS, as: ProcSQS
+  alias Dawdle.Backend.SQS, as: DawdleSQS
 
   def child_spec([queue, callback]) do
            %{
@@ -20,7 +20,7 @@ defmodule Procrastinator.Backend.SQS.Poller do
     {:ok, %{body: %{messages: messages}}} =
       queue
       |> SQS.receive_message()
-      |> ExAws.request(ProcSQS.aws_config())
+      |> ExAws.request(DawdleSQS.aws_config())
 
     handle_messages(messages, queue, callback)
 
@@ -49,7 +49,7 @@ defmodule Procrastinator.Backend.SQS.Poller do
 
     queue
     |> SQS.delete_message_batch(del_list)
-    |> ExAws.request(ProcSQS.aws_config())
+    |> ExAws.request(DawdleSQS.aws_config())
     |> IO.inspect
   end
 

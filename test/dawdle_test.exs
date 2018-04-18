@@ -1,20 +1,20 @@
-defmodule ProcrastinatorTest do
+defmodule DawdleTest do
   use ExUnit.Case, async: false
 
   setup do
     self = self()
-    Procrastinator.start_link(&callback(self, &1))
+    Dawdle.start_link(&callback(self, &1))
     :ok
   end
 
   @payload "test message"
   test "send message with no delay" do
-    Procrastinator.send(@payload, 0)
+    Dawdle.send(@payload, 0)
     assert_receive @payload
   end
 
   test "send message with 1s delay" do
-    Procrastinator.send(@payload, 1000)
+    Dawdle.send(@payload, 1000)
     refute_receive _, 500
     assert_receive @payload, 1000
   end
@@ -26,7 +26,7 @@ defmodule ProcrastinatorTest do
         |> Enum.map(&List.duplicate(&1, 10))
         |> List.flatten()
         |> Enum.shuffle()
-        |> Enum.each(&Procrastinator.send(&1, &1))
+        |> Enum.each(&Dawdle.send(&1, &1))
     end)
 
     offset = div(setup_time, 1000)

@@ -1,8 +1,8 @@
-defmodule Procrastinator.Backend.SQS do
+defmodule Dawdle.Backend.SQS do
   alias ExAws.SQS
-  alias Procrastinator.Backend.SQS.Supervisor, as: SQSSupervisor
+  alias Dawdle.Backend.SQS.Supervisor, as: SQSSupervisor
 
-  @behaviour Procrastinator.Backend
+  @behaviour Dawdle.Backend
 
   def start_link(callback) do
     SQSSupervisor.start_link(config(:queues),

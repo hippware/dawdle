@@ -1,7 +1,7 @@
-defmodule Procrastinator.Backend.SQS.Supervisor do
+defmodule Dawdle.Backend.SQS.Supervisor do
   use Supervisor
 
-  alias Procrastinator.Backend.SQS.Poller
+  alias Dawdle.Backend.SQS.Poller
 
   def start_link(queue_list, workers_per_queue, callback) do
     Supervisor.start_link(__MODULE__,
