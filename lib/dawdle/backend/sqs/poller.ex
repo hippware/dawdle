@@ -1,16 +1,18 @@
 defmodule Dawdle.Backend.SQS.Poller do
+  @moduledoc false
+
   alias ExAws.SQS
   alias Dawdle.Backend.SQS, as: DawdleSQS
 
   def child_spec([queue, callback]) do
-           %{
-             id: name(queue),
-             start: {__MODULE__, :start_link, [queue, callback]},
-             type: :worker,
-             restart: :permanent,
-             shutdown: 500
-           }
-         end
+    %{
+      id: name(queue),
+      start: {__MODULE__, :start_link, [queue, callback]},
+      type: :worker,
+      restart: :permanent,
+      shutdown: 500
+    }
+  end
 
   def start_link(queue, callback) do
     Task.start_link(fn -> poll(queue, callback) end)
@@ -28,6 +30,7 @@ defmodule Dawdle.Backend.SQS.Poller do
   end
 
   defp handle_messages([], _, _), do: :ok
+
   defp handle_messages(messages, queue, callback) do
     # Delete before firing the callback otherwise if the callback crashes
     # or quits (as it does in testing) the message won't be removed from the

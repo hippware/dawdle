@@ -1,4 +1,6 @@
 defmodule Dawdle.Backend.Local do
+  @moduledoc false
+
   use GenServer
 
   @behaviour Dawdle.Backend

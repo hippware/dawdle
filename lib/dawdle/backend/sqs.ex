@@ -1,4 +1,6 @@
 defmodule Dawdle.Backend.SQS do
+  @moduledoc false
+
   alias ExAws.SQS
   alias Dawdle.Backend.SQS.Supervisor, as: SQSSupervisor
 
@@ -10,6 +12,7 @@ defmodule Dawdle.Backend.SQS do
 
   def send(message, delay) do
     body = message |> :erlang.term_to_binary() |> Base.encode64()
+
     {:ok, _} =
       get_queue()
       |> SQS.send_message(

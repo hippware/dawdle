@@ -20,12 +20,12 @@ defmodule DawdleTest do
 
   @payload "1s"
   test "send message with 1s delay" do
-    Dawdle.send(@payload, 1000)
+    Dawdle.send(@payload, 1_000)
     refute_receive _, 800
     assert_receive @payload, 400
   end
 
-  @intervals [1000, 5000, 10000]
+  @intervals [1_000, 5_000, 10_000]
   test "send 5 messages with various delays" do
     @intervals
     |> Enum.map(&List.duplicate(&1, 5))
@@ -33,13 +33,13 @@ defmodule DawdleTest do
     |> Enum.shuffle()
     |> Enum.each(&Dawdle.send(&1, &1))
 
-    Enum.each([500, 4000, 9000], &:erlang.send_after(&1, self(), :none))
-    Enum.each([1200, 6000, 11000], &:erlang.send_after(&1, self(), :receive))
+    Enum.each([500, 4_000, 9_000], &:erlang.send_after(&1, self(), :none))
+    Enum.each([1_200, 6_000, 11_000], &:erlang.send_after(&1, self(), :receive))
 
     Enum.each(@intervals, fn i ->
-        assert_receive :none, 20000
+        assert_receive :none, 20_000
         refute_received _
-        assert_receive :receive, 20000
+        assert_receive :receive, 20_000
         Enum.each(1..5, fn _ -> assert_received ^i end)
       end)
   end
