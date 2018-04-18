@@ -5,9 +5,7 @@ defmodule Dawdle.Backend.SQS do
   @behaviour Dawdle.Backend
 
   def start_link(callback) do
-    SQSSupervisor.start_link(config(:queues),
-                             config(:workers_per_queue, 1),
-                             callback)
+    SQSSupervisor.start_link(config(:queues), callback)
   end
 
   def send(message, delay) do

@@ -19,7 +19,7 @@ defmodule Dawdle.Backend.SQS.Poller do
   def poll(queue, callback) do
     {:ok, %{body: %{messages: messages}}} =
       queue
-      |> SQS.receive_message()
+      |> SQS.receive_message(max_number_of_messages: 10)
       |> ExAws.request(DawdleSQS.aws_config())
 
     handle_messages(messages, queue, callback)
@@ -42,18 +42,14 @@ defmodule Dawdle.Backend.SQS.Poller do
   end
 
   def delete(messages, queue) do
-    IO.inspect messages
-    IO.inspect queue
     {del_list, _} =
       Enum.map_reduce(messages, 0, fn m, id ->
         {%{id: Integer.to_string(id), receipt_handle: m.receipt_handle}, id + 1}
       end)
-    IO.inspect del_list
 
     queue
     |> SQS.delete_message_batch(del_list)
     |> ExAws.request(DawdleSQS.aws_config())
-    |> IO.inspect
   end
 
   def name(queue) do
