@@ -16,6 +16,6 @@ defmodule Procrastinator do
   end
 
   defp backend do
-    Confex.get_env(Procrastinator, :backend, Procrastinator.Backend.Local)
+    Confex.get_env(:procrastinator, :backend, Procrastinator.Backend.Local)
   end
 end

@@ -10,16 +10,15 @@ defmodule Procrastinator.Backend.SQS do
                              callback)
   end
 
-  @group_id "procrastinator"
-
   def send(message, delay) do
-    get_queue()
-    |> SQS.send_message(
-      message,
-      message_group_id: @group_id,
-      delay_seconds: div(delay, 1000)
-    )
-    |> ExAws.request(aws_config())
+    body = message |> :erlang.term_to_binary() |> Base.encode64()
+    {:ok, _} =
+      get_queue()
+      |> SQS.send_message(
+        body,
+        delay_seconds: div(delay, 1000)
+      )
+      |> ExAws.request(aws_config())
   end
 
   defp get_queue() do
@@ -31,7 +30,7 @@ defmodule Procrastinator.Backend.SQS do
   def aws_config, do: [region: config(:region)]
 
   def config(term, default \\ nil) do
-    Procrastinator
+    :procrastinator
     |> Confex.fetch_env!(__MODULE__)
     |> Keyword.get(term, default)
   end

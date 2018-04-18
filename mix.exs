@@ -24,7 +24,9 @@ defmodule Procrastinator.MixProject do
       {:confex, "~> 3.3"},
       {:ex_aws, "~> 2.0"},
       {:ex_aws_sqs, "~> 2.0"},
-      {:hackney, "~> 1.7"}
+      {:hackney, "~> 1.7"},
+      {:poison, "~> 3.1"},
+      {:sweet_xml, "~> 0.6"}
     ]
   end
 end

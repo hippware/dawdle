@@ -15,24 +15,28 @@ defmodule ProcrastinatorTest do
 
   test "send message with 1s delay" do
     Procrastinator.send(@payload, 1000)
-    refute_receive _, 800
-    assert_receive @payload, 300
+    refute_receive _, 500
+    assert_receive @payload, 1000
   end
 
   @intervals [1000, 5000, 10000]
   test "send 10 messages with various delays" do
-    @intervals
-    |> Enum.map(&List.duplicate(&1, 10))
-    |> List.flatten()
-    |> Enum.shuffle()
-    |> Enum.each(&Procrastinator.send(&1, &1))
+    {setup_time, _} = :timer.tc(fn ->
+        @intervals
+        |> Enum.map(&List.duplicate(&1, 10))
+        |> List.flatten()
+        |> Enum.shuffle()
+        |> Enum.each(&Procrastinator.send(&1, &1))
+    end)
 
-    :timer.send_after(800, :none)
-    :timer.send_after(1200, :receive)
-    :timer.send_after(4800, :none)
-    :timer.send_after(5200, :receive)
-    :timer.send_after(9800, :none)
-    :timer.send_after(10200, :receive)
+    offset = div(setup_time, 1000)
+
+    :timer.send_after(max(500 - offset, 0), :none)
+    :timer.send_after(max(1500 - offset, 0), :receive)
+    :timer.send_after(4500 - offset, :none)
+    :timer.send_after(5500 - offset, :receive)
+    :timer.send_after(9500 - offset, :none)
+    :timer.send_after(10500 - offset, :receive)
 
     assert_receive :none, 1000
     refute_receive _, 0

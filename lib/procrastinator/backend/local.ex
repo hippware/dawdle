@@ -4,6 +4,7 @@ defmodule Procrastinator.Backend.Local do
   @behaviour Procrastinator.Backend
 
   def start_link(callback) do
+    IO.inspect "Using LOCAL backend"
     GenServer.start_link(__MODULE__, callback, name: __MODULE__)
   end
 
