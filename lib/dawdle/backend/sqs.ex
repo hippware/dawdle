@@ -20,6 +20,8 @@ defmodule Dawdle.Backend.SQS do
         delay_seconds: div(delay, 1000)
       )
       |> ExAws.request(aws_config())
+
+    :ok
   end
 
   defp get_queue() do
