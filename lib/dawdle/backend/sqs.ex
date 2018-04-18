@@ -30,7 +30,7 @@ defmodule Dawdle.Backend.SQS do
   def aws_config, do: [region: config(:region)]
 
   def config(term, default \\ nil) do
-    :procrastinator
+    :dawdle
     |> Confex.fetch_env!(__MODULE__)
     |> Keyword.get(term, default)
   end
