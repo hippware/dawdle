@@ -10,11 +10,11 @@ use Mix.Config
 
 # You can configure your application as:
 #
-#     config :procrastinator, key: :value
+#     config :dawdle, key: :value
 #
 # and access this configuration in your application as:
 #
-#     Application.get_env(:procrastinator, :key)
+#     Application.get_env(:dawdle, :key)
 #
 # You can also configure a 3rd-party app:
 #
