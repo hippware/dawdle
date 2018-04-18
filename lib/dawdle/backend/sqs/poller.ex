@@ -29,8 +29,11 @@ defmodule Dawdle.Backend.SQS.Poller do
 
   defp handle_messages([], _, _), do: :ok
   defp handle_messages(messages, queue, callback) do
-    Enum.each(messages, &fire_callback(&1, callback))
+    # Delete before firing the callback otherwise if the callback crashes
+    # or quits (as it does in testing) the message won't be removed from the
+    # SQS queue.
     delete(messages, queue)
+    Enum.each(messages, &fire_callback(&1, callback))
   end
 
   def fire_callback(%{body: body}, callback) do
