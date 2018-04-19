@@ -8,29 +8,29 @@ defmodule DawdleTest do
   end
 
   @payload "0s"
-  test "send message with no delay" do
+  test "set timeout with no delay" do
     self = self()
-    Dawdle.send(&send(self, &1), @payload, 0)
+    Dawdle.call_after(&send(self, &1), @payload, 0)
     assert_receive @payload, 500
   end
 
   @payload "1s"
-  test "send message with 1s delay" do
+  test "set timeout with 1s delay" do
     self = self()
-    Dawdle.send(&send(self, &1), @payload, 1_000)
+    Dawdle.call_after(&send(self, &1), @payload, 1_000)
     refute_receive _, 800
     assert_receive @payload, 400
   end
 
   @intervals [1_000, 5_000, 10_000]
-  test "send 5 messages with various delays" do
+  test "set 5 timeouts with various delays" do
     self = self()
     callback = &send(self, &1)
     @intervals
     |> Enum.map(&List.duplicate(&1, 5))
     |> List.flatten()
     |> Enum.shuffle()
-    |> Enum.each(&Dawdle.send(callback, &1, &1))
+    |> Enum.each(&Dawdle.call_after(callback, &1, &1))
 
     Enum.each([500, 4_000, 9_000], &:erlang.send_after(&1, self(), :none))
     Enum.each([1_200, 6_000, 11_000], &:erlang.send_after(&1, self(), :receive))

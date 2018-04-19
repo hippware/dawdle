@@ -18,7 +18,7 @@ Add `dawdle` to your list of dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:dawdle, "~> 0.2.0"}
+    {:dawdle, "~> 0.3.0"}
   ]
 end
 ```
@@ -50,10 +50,10 @@ use cases one queue should be plenty.
 ## Setting Up Your SQS Queues
 
 Obviously the configured SQS queues need to exist and be accessible by your
-application. Basic AWS authentication is handled by
+application. AWS authentication is handled by
 [ex_aws](https://github.com/ex-aws/ex_aws). If you're already using `ex_aws` for
 something else, your configuration should already be good. If not, follow the
-configuration guide on that page to set up your AWS key.
+configuration instructions on that page to set up your AWS key.
 
 The queues themselves *must* be SQS's "Standard Queue" (not "FIFO Queue"). They
 can be configured with default values, __except__ that:
@@ -76,14 +76,14 @@ iex> Dawdle.start_link()
 ```
 
 Create a callback function
-```
+```elixir
 iex> callback = fn message -> IO.inspect "Received #{message}" end
 #Function<6.99386804/1 in :erl_eval.expr/5>
 ```
 
 Send your message
-```
-iex(3)> Dawdle.send(callback, "Hello future", 2000)
+```elixir
+iex(3)> Dawdle.call_after(callback, "Hello future", 2000)
 :ok
 
 # 2 seconds later

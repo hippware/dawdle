@@ -1,6 +1,6 @@
 defmodule Dawdle do
   @moduledoc ~S"""
-  Documentation for Dawdle.
+  Main module for Dawdle dealy system.
   """
 
   @doc """
@@ -10,13 +10,14 @@ defmodule Dawdle do
   @type callback :: (message() -> any())
   @type duration :: non_neg_integer()
 
+  @spec start_link() :: {:ok, pid()}
   def start_link, do: backend().start_link()
 
   @doc """
-  Send a message to be fired back after at least the specified delay in ms
+  Set a callback to be called the eafter `delay` ms
   """
-  @spec send(callback(), message(), duration()) :: :ok | {:error, term()}
-  def send(callback, message, delay) do
+  @spec call_after(callback(), message(), duration()) :: :ok | {:error, term()}
+  def call_after(callback, message, delay) do
     backend().send(callback, message, delay)
   end
 
