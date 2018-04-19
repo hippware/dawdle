@@ -6,12 +6,12 @@ defmodule Dawdle.Backend.SQS do
 
   @behaviour Dawdle.Backend
 
-  def start_link(callback) do
-    SQSSupervisor.start_link(config(:queues), callback)
+  def start_link() do
+    SQSSupervisor.start_link(config(:queues))
   end
 
-  def send(message, delay) do
-    body = message |> :erlang.term_to_binary() |> Base.encode64()
+  def send(callback, message, delay) do
+    body = {callback, message} |> :erlang.term_to_binary() |> Base.encode64()
 
     {:ok, _} =
       get_queue()

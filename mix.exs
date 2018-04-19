@@ -4,10 +4,13 @@ defmodule Dawdle.MixProject do
   def project do
     [
       app: :dawdle,
-      version: "0.1.0",
+      version: "0.2.0",
       elixir: "~> 1.6",
       start_permanent: Mix.env() == :prod,
-      deps: deps()
+      description: description(),
+      package: package(),
+      deps: deps(),
+      source_url: "https://github.com/hippware/dawdle",
     ]
   end
 
@@ -21,12 +24,27 @@ defmodule Dawdle.MixProject do
     [
       {:dialyxir, "~> 0.5", only: [:dev, :test], runtime: false},
       {:credo, "~> 0.6", only: [:dev, :test], runtime: false},
+      {:ex_doc, ">= 0.0.0", only: :dev},
       {:confex, "~> 3.3"},
       {:ex_aws, "~> 2.0"},
       {:ex_aws_sqs, "~> 2.0"},
       {:hackney, "~> 1.7"},
       {:poison, "~> 3.1"},
       {:sweet_xml, "~> 0.6"}
+    ]
+  end
+
+  defp description do
+    """
+    A system for firing messages with a delay using Amazon's AWS SQS
+    """
+  end
+
+  defp package do
+    [
+      maintainers: ["Bernard Duggan", "Phil Toland"],
+      licenses: ["MIT"],
+      links: %{"GitHub" => "https://github.com/hippware/dawdle"}
     ]
   end
 end

@@ -4,43 +4,43 @@ defmodule Dawdle.Backend.SQS.Poller do
   alias ExAws.SQS
   alias Dawdle.Backend.SQS, as: DawdleSQS
 
-  def child_spec([queue, callback]) do
+  def child_spec(queue) do
     %{
       id: name(queue),
-      start: {__MODULE__, :start_link, [queue, callback]},
+      start: {__MODULE__, :start_link, queue},
       type: :worker,
       restart: :permanent,
       shutdown: 500
     }
   end
 
-  def start_link(queue, callback) do
-    Task.start_link(fn -> poll(queue, callback) end)
+  def start_link(queue) do
+    Task.start_link(fn -> poll(queue) end)
   end
 
-  def poll(queue, callback) do
+  def poll(queue) do
     {:ok, %{body: %{messages: messages}}} =
       queue
       |> SQS.receive_message(max_number_of_messages: 10)
       |> ExAws.request(DawdleSQS.aws_config())
 
-    handle_messages(messages, queue, callback)
+    handle_messages(messages, queue)
 
-    poll(queue, callback)
+    poll(queue)
   end
 
-  defp handle_messages([], _, _), do: :ok
+  defp handle_messages([], _), do: :ok
 
-  defp handle_messages(messages, queue, callback) do
+  defp handle_messages(messages, queue) do
     # Delete before firing the callback otherwise if the callback crashes
     # or quits (as it does in testing) the message won't be removed from the
     # SQS queue.
     delete(messages, queue)
-    Enum.each(messages, &fire_callback(&1, callback))
+    Enum.each(messages, &fire_callback(&1))
   end
 
-  def fire_callback(%{body: body}, callback) do
-    message = body |> Base.decode64!() |> :erlang.binary_to_term()
+  def fire_callback(%{body: body}) do
+    {callback, message} = body |> Base.decode64!() |> :erlang.binary_to_term()
     callback.(message)
   end
 

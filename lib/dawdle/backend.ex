@@ -3,9 +3,8 @@ defmodule Dawdle.Backend do
   Behaviour module for Dawdle backend implementation
   """
 
-  @type message :: binary()
-  @type callback :: (message() -> any())
+  @callback start_link() :: {:ok, pid()}
 
-  @callback start_link(callback()) :: {:ok, pid()}
-  @callback send(message(), non_neg_integer()) :: :ok | {:error, term()}
+  @callback send(Dawdle.callback(), Dawdle.message(), Dawdle.duration())
+  :: :ok | {:error, term()}
 end
