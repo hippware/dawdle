@@ -7,7 +7,7 @@ defmodule Dawdle.Backend.SQS.Poller do
   def child_spec(queue) do
     %{
       id: name(queue),
-      start: {__MODULE__, :start_link, queue},
+      start: {__MODULE__, :start_link, [queue]},
       type: :worker,
       restart: :permanent,
       shutdown: 500
