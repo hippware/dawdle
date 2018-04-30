@@ -118,7 +118,6 @@ are Base64 encoded, so avoid sending large structures in your message.
 If you need a large bit of data as part of your message, stash it
 in a persistent store first and send the key through Dawdle.
 
-SQS timeouts are limited to 15 minutes. If you need a longer timeout, one option
-is to chain a series of 15 minute calls together with each callback setting a
-new 15 minute timeout until the total is reached. This could potentially be
-built into the SQS backend, but currently it isn't. (Patches welcome!).
+SQS timeouts are limited to 15 minutes. We handle longer timeouts by using
+multiple chained messages, so factor this into any capacity calculations you're
+doing.

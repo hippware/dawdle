@@ -6,8 +6,8 @@ defmodule Dawdle do
   @doc """
   """
 
-  @type message :: any()
-  @type callback :: (message() -> any())
+  @type argument :: any()
+  @type callback :: (argument() -> any())
   @type duration :: non_neg_integer()
 
   @spec start_link() :: {:ok, pid()}
@@ -16,9 +16,9 @@ defmodule Dawdle do
   @doc """
   Set a callback to be called the eafter `delay` ms
   """
-  @spec call_after(callback(), message(), duration()) :: :ok | {:error, term()}
-  def call_after(callback, message, delay) do
-    backend().send(callback, message, delay)
+  @spec call_after(callback(), argument(), duration()) :: :ok | {:error, term()}
+  def call_after(callback, argument, delay) do
+    backend().send(callback, argument, delay)
   end
 
   defp backend do

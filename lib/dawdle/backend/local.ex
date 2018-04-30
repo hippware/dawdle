@@ -9,20 +9,20 @@ defmodule Dawdle.Backend.Local do
     GenServer.start_link(__MODULE__, nil, name: __MODULE__)
   end
 
-  def send(callback, message, delay) do
-    GenServer.cast(__MODULE__, {:send, callback, message, delay})
+  def send(callback, argument, delay) do
+    GenServer.cast(__MODULE__, {:send, callback, argument, delay})
   end
 
   def init(nil) do
     {:ok, nil}
   end
 
-  def handle_cast({:send, callback, message, delay}, state) do
-    :timer.apply_after(delay, __MODULE__, :recv, [callback, message])
+  def handle_cast({:send, callback, argument, delay}, state) do
+    :timer.apply_after(delay, __MODULE__, :recv, [callback, argument])
     {:noreply, state}
   end
 
-  def recv(callback, message) do
-    callback.(message)
+  def recv(callback, argument) do
+    callback.(argument)
   end
 end
