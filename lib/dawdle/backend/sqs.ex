@@ -13,10 +13,10 @@ defmodule Dawdle.Backend.SQS do
   ]
 
   @type t :: %__MODULE__{
-    remaining_delay: Dawdle.duration,
-    callback: Dawdle.callback,
-    argument: Dawdle.argument
-  }
+          remaining_delay: Dawdle.duration(),
+          callback: Dawdle.callback(),
+          argument: Dawdle.argument()
+        }
 
   @behaviour Dawdle.Backend
 
@@ -26,7 +26,6 @@ defmodule Dawdle.Backend.SQS do
 
   ## Outgoing handlers
   def send(callback, argument, delay_ms) do
-
     %__MODULE__{
       remaining_delay: div(delay_ms, 1000),
       callback: callback,
@@ -77,7 +76,7 @@ defmodule Dawdle.Backend.SQS do
   end
 
   defp decode_and_handle(%{body: body}) do
-    try  do
+    try do
       body
       |> Base.decode64!()
       |> :erlang.binary_to_term([:safe])
@@ -90,7 +89,7 @@ defmodule Dawdle.Backend.SQS do
   end
 
   defp handle_message(%__MODULE__{remaining_delay: remaining_delay} = message)
-  when remaining_delay > 0 do
+       when remaining_delay > 0 do
     send_message(message)
   end
 
@@ -108,5 +107,4 @@ defmodule Dawdle.Backend.SQS do
     |> SQS.delete_message_batch(del_list)
     |> ExAws.request(aws_config())
   end
-
 end

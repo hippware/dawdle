@@ -5,6 +5,6 @@ defmodule Dawdle.Backend do
 
   @callback start_link() :: {:ok, pid()}
 
-  @callback send(Dawdle.callback(), Dawdle.argument(), Dawdle.duration())
-  :: :ok | {:error, term()}
+  @callback send(Dawdle.callback(), Dawdle.argument(), Dawdle.duration()) ::
+              :ok | {:error, term()}
 end

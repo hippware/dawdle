@@ -10,7 +10,7 @@ defmodule Dawdle.MixProject do
       description: description(),
       package: package(),
       deps: deps(),
-      source_url: "https://github.com/hippware/dawdle",
+      source_url: "https://github.com/hippware/dawdle"
     ]
   end
 
