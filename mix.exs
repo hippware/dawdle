@@ -14,22 +14,20 @@ defmodule Dawdle.MixProject do
     ]
   end
 
-  # Run "mix help compile.app" to learn about applications.
   def application do
     []
   end
 
-  # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
+      {:confex, "~> 3.4"},
+      {:credo, "~> 1.0", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 0.5", only: [:dev, :test], runtime: false},
-      {:credo, "~> 0.6", only: [:dev, :test], runtime: false},
-      {:ex_doc, ">= 0.0.0", only: :dev},
-      {:confex, "~> 3.3"},
       {:ex_aws, "~> 2.0"},
       {:ex_aws_sqs, "~> 2.0"},
+      {:ex_doc, ">= 0.0.0", only: :dev},
       {:hackney, "~> 1.7"},
-      {:poison, "~> 3.1"},
+      {:poison, "~> 3.0 or ~> 4.0"},
       {:sweet_xml, "~> 0.6"}
     ]
   end
