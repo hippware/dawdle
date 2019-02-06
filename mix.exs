@@ -34,7 +34,9 @@ defmodule Dawdle.MixProject do
 
   defp description do
     """
-    A system for firing messages with a delay using Amazon's AWS SQS
+    Dawdle weaponizes Amazon SQS for use in your Elixir applications. Use it
+    when you want to handle something later, or, better yet, when you want
+    someone else to handle it.
     """
   end
 
