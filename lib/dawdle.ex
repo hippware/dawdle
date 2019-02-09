@@ -1,27 +1,19 @@
 defmodule Dawdle do
-  @moduledoc ~S"""
-  Main module for Dawdle dealy system.
-  """
-
-  @doc """
+  @moduledoc """
+  Main module for the Dawdle messaging system.
   """
 
   @type argument :: any()
   @type callback :: (argument() -> any())
   @type duration :: non_neg_integer()
 
-  @spec start_link() :: {:ok, pid()}
-  def start_link, do: backend().start_link()
-
   @doc """
-  Set a callback to be called the eafter `delay` ms
+  Set a callback to be called the after `delay` ms
   """
   @spec call_after(callback(), argument(), duration()) :: :ok | {:error, term()}
-  def call_after(callback, argument, delay) do
-    backend().send(callback, argument, delay)
+  def call_after(_callback, _argument, _delay) do
+    # backend().send(callback, argument, delay)
   end
 
-  defp backend do
-    Confex.get_env(:dawdle, :backend, Dawdle.Backend.Local)
-  end
+  defdelegate signal(event), to: Dawdle.Client
 end

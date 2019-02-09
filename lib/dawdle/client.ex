@@ -34,6 +34,14 @@ defmodule Dawdle.Client do
     GenServer.call(__MODULE__, {:unsubscribe, ref})
   end
 
+  def subscriber_count do
+    GenServer.call(__MODULE__, :subscriber_count)
+  end
+
+  def subscriber_count(object) do
+    GenServer.call(__MODULE__, {:subscriber_count, object})
+  end
+
   def clear_all_subscriptions do
     GenServer.call(__MODULE__, :clear_all_subscriptions)
   end
@@ -76,6 +84,21 @@ defmodule Dawdle.Client do
       |> Map.new()
 
     {:reply, :ok, %State{state | subscribers: new_subscribers}}
+  end
+
+  def handle_call(:subscriber_count, _from, state) do
+    count =
+      Enum.reduce(state.subscribers, 0, fn {_, x}, acc ->
+        MapSet.size(x) + acc
+      end)
+
+    {:reply, count, state}
+  end
+
+  def handle_call({:subscriber_count, object}, _from, state) do
+    subscribers = Map.get(state.subscribers, object, MapSet.new())
+
+    {:reply, MapSet.size(subscribers), state}
   end
 
   def handle_call(:clear_all_subscriptions, _from, state) do
