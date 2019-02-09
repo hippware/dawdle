@@ -113,11 +113,13 @@ defmodule Dawdle.Client do
     |> Enum.each(fn {fun, _ref} -> fun.(event) end)
   rescue
     error ->
-      Logger.error(
-        "Dawdle event handler crash: #{inspect(error)}" #,
-        # %{event: inspect(json_event), error: inspect(error)},
-        # self() |> Process.info(:current_stacktrace) |> elem(1)
-      )
+      Logger.error("""
+      Dawdle event handler crash:
+        Event: #{inspect(message)}
+        Error: #{inspect(error)}
+
+        #{inspect(self() |> Process.info(:current_stacktrace) |> elem(1))}
+      """)
   end
 
   defp delete_ref({key, val}, ref) do
