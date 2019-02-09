@@ -1,7 +1,3 @@
-defmodule TestMsg do
-  defstruct [:foo, :bar, :baz]
-end
-
 defmodule Dawdle.Client do
   @moduledoc """
   The client for the DawdleDB - entities interested in queue events
@@ -9,6 +5,7 @@ defmodule Dawdle.Client do
   """
 
   defmodule State do
+    @moduledoc false
     defstruct [:subscribers, :backend]
   end
 
