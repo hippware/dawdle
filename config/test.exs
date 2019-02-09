@@ -1,6 +1,6 @@
 use Mix.Config
 
-config :dawdle, backend: Dawdle.Backend.Local
+config :dawdle, backend: Dawdle.Backend.Direct
 
 # Sample config for running tests against SQS:
 config :dawdle, Dawdle.Backend.SQS,
