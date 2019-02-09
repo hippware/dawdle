@@ -10,7 +10,13 @@ defmodule Dawdle.MixProject do
       description: description(),
       package: package(),
       deps: deps(),
-      source_url: "https://github.com/hippware/dawdle"
+      source_url: "https://github.com/hippware/dawdle",
+      test_coverage: [tool: ExCoveralls],
+      preferred_cli_env: [
+        coveralls: :test,
+        "coveralls.detail": :test,
+        "coveralls.html": :test
+      ]
     ]
   end
 
@@ -26,6 +32,7 @@ defmodule Dawdle.MixProject do
       {:ex_aws, "~> 2.0"},
       {:ex_aws_sqs, "~> 2.0"},
       {:ex_doc, ">= 0.0.0", only: :dev},
+      {:excoveralls, "~> 0.10", only: :test},
       {:hackney, "~> 1.7"},
       {:poison, "~> 3.0 or ~> 4.0"},
       {:sweet_xml, "~> 0.6"}
