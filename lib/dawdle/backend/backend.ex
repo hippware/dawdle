@@ -13,7 +13,7 @@ defmodule Dawdle.Backend do
 
   @type new() :: Module
   def new do
-    backend = Confex.get_env(:dawdle, :backend, Dawdle.Backend.Direct)
+    backend = Confex.get_env(:dawdle, :backend)
 
     backend.init()
 

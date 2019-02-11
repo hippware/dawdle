@@ -1,6 +1,6 @@
-defmodule Dawdle.Backend.Direct do
+defmodule Dawdle.Backend.Local do
   @moduledoc """
-  The Direct backend for the Dawdle DB watcher. This is used only for testing
+  The local backend for the Dawdle DB watcher. This is used only for testing
   in development where SQS is not available.
   """
 
