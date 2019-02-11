@@ -4,6 +4,8 @@ defmodule Dawdle.Poller do
   that sends to another process.
   """
 
+  require Logger
+
   def start_link(source, send_to) do
     Task.start_link(fn -> poll(source, send_to) end)
   end
@@ -16,9 +18,9 @@ defmodule Dawdle.Poller do
     |> send_to.recv()
 
     source.delete(messages)
-  # rescue
-  #   exception ->
-  #     Honeybadger.notify(exception)
+  rescue
+    exception ->
+      Logger.error("Dawdle poller crash: #{inspect(exception)}")
   after
     poll(source, send_to)
   end
