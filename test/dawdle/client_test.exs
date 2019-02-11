@@ -7,12 +7,6 @@ defmodule Dawdle.ClientTest do
     defstruct [:pid]
   end
 
-  setup_all do
-    {:ok, _pid} = Client.start_link()
-
-    :ok
-  end
-
   setup do
     Client.clear_all_subscriptions()
 

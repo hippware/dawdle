@@ -17,7 +17,7 @@ defmodule Dawdle.Client do
 
   require Logger
 
-  def start_link, do: GenServer.start_link(__MODULE__, nil, name: __MODULE__)
+  def start_link(_), do: GenServer.start_link(__MODULE__, nil, name: __MODULE__)
 
   @doc false
   def recv(events), do: GenServer.cast(__MODULE__, {:recv, events})

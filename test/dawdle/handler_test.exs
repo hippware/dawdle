@@ -17,8 +17,7 @@ defmodule Dawdle.HandlerTest do
   end
 
   setup_all do
-    {:ok, _pid} = Client.start_link()
-
+    Client.clear_all_subscriptions()
     TestHandler.register()
 
     :ok

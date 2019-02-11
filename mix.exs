@@ -21,7 +21,10 @@ defmodule Dawdle.MixProject do
   end
 
   def application do
-    []
+    [
+      extra_applications: [:logger],
+      mod: {Dawdle.Application, []}
+    ]
   end
 
   defp deps do
