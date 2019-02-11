@@ -13,14 +13,38 @@ defmodule Dawdle.ClientTest do
     :ok
   end
 
+  setup do
+    Client.clear_all_subscriptions()
+
+    {:ok, ref} =
+      Client.subscribe(
+        TestEvent,
+        fn %TestEvent{pid: pid} -> send(pid, :handled) end
+      )
+
+    {:ok, ref: ref}
+  end
+
   test "basic signal handling" do
-    Client.subscribe(TestEvent, fn %TestEvent{pid: pid} -> send(pid, :handled) end)
+    t = %TestEvent{pid: self()}
+
+    Dawdle.signal(t)
+
+    assert_receive :handled
+  end
+
+  test "multiple handlers" do
+    Client.subscribe(
+      TestEvent,
+      fn %TestEvent{pid: pid} -> send(pid, :rehandled) end
+    )
 
     t = %TestEvent{pid: self()}
 
     Dawdle.signal(t)
 
     assert_receive :handled
+    assert_receive :rehandled
   end
 
   test "handler crash" do
@@ -30,39 +54,26 @@ defmodule Dawdle.ClientTest do
 
     Dawdle.signal(t)
 
-    # TODO validation?
-  end
-
-  test "multiple handlers" do
-    # TODO
+    assert_receive :handled
   end
 
   test "subscribe/2" do
-    count = Client.subscriber_count(TestEvent)
-
     Client.subscribe(TestEvent, fn _ -> :ok end)
 
-    assert Client.subscriber_count(TestEvent) == count + 1
+    assert Client.subscriber_count(TestEvent) == 2
   end
 
-  test "unsubscribe/1" do
-    {:ok, ref} = Client.subscribe(TestEvent, fn _ -> :ok end)
-    count = Client.subscriber_count(TestEvent)
-
+  test "unsubscribe/1", %{ref: ref} do
     Client.unsubscribe(ref)
 
-    assert Client.subscriber_count(TestEvent) == count - 1
+    assert Client.subscriber_count(TestEvent) == 0
   end
 
   test "subscriber_count" do
-    Client.subscribe(TestEvent, fn _ -> :ok end)
-
     assert Client.subscriber_count() == Client.subscriber_count(TestEvent)
   end
 
   test "clear_all_subscriptions" do
-    Client.subscribe(TestEvent, fn _ -> :ok end)
-
     Client.clear_all_subscriptions()
 
     assert Client.subscriber_count() == 0
