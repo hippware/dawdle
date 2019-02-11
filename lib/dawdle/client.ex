@@ -17,6 +17,7 @@ defmodule Dawdle.Client do
 
   require Logger
 
+  @doc false
   def start_link(_), do: GenServer.start_link(__MODULE__, nil, name: __MODULE__)
 
   @doc false
@@ -49,7 +50,9 @@ defmodule Dawdle.Client do
   def init(_) do
     backend = Backend.new()
 
-    Poller.start_link(backend, __MODULE__)
+    if Confex.get_env(:dawdle, :start_listener) do
+      Poller.start_link(backend, __MODULE__)
+    end
 
     {:ok, %State{backend: backend, subscribers: %{}}}
   end
