@@ -27,6 +27,10 @@ defmodule Dawdle.Client do
     GenServer.call(__MODULE__, {:signal, object})
   end
 
+  def signal(object, delay) do
+    GenServer.call(__MODULE__, {:signal, object, delay})
+  end
+
   def subscribe(object, fun) do
     GenServer.call(__MODULE__, {:subscribe, object, fun})
   end
@@ -66,6 +70,14 @@ defmodule Dawdle.Client do
     message = MessageEncoder.encode(event)
 
     state.backend.send([message])
+
+    {:reply, :ok, state}
+  end
+
+  def handle_call({:signal, event, delay}, _from, state) do
+    message = MessageEncoder.encode(event)
+
+    state.backend.send_after(message, delay)
 
     {:reply, :ok, state}
   end
@@ -113,15 +125,24 @@ defmodule Dawdle.Client do
 
     state.subscribers
     |> Map.get(object, [])
-    |> Enum.each(fn {fun, _ref} -> fun.(event) end)
+    |> Enum.each(fn {fun, _ref} -> call_handler(fun, event) end)
+  end
+
+  defp call_handler(fun, event) do
+    Task.start(__MODULE__, :do_call_handler, [fun, event])
+  end
+
+  @doc false
+  def do_call_handler(fun, event) do
+    fun.(event)
   rescue
     error ->
       Logger.error("""
       Dawdle event handler crash:
-        Event: #{inspect(message)}
+        Event: #{inspect(event)}
         Error: #{inspect(error)}
 
-        #{inspect(self() |> Process.info(:current_stacktrace) |> elem(1))}
+        #{inspect(__STACKTRACE__)}
       """)
   end
 

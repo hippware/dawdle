@@ -3,4 +3,5 @@ use Mix.Config
 # Sample config for running tests against SQS:
 config :dawdle, Dawdle.Backend.SQS,
   region: "us-east-1",
-  queues: ["dawdle-test-1", "dawdle-test-2", "dawdle-test-3"]
+  message_queue: "dawdle-test-1",
+  delay_queue: "dawdle-test-2"

@@ -6,4 +6,5 @@ config :dawdle,
 config :dawdle, Dawdle.Backend.SQS,
   region: "us-east-1",
   # Add your SQS queues here
-  queues: []
+  message_queue: "dawdle-message-queue",
+  delay_queue: "dawdle-delay-queue"

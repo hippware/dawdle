@@ -8,20 +8,26 @@ defmodule Dawdle.Backend.SQS do
   def init, do: :ok
 
   def send([message]) do
-    queue()
+    message_queue()
     |> SQS.send_message(message)
     |> ExAws.request(aws_config())
   end
 
   def send(messages) do
-    queue()
+    message_queue()
     |> SQS.send_message_batch(batchify(messages))
+    |> ExAws.request(aws_config())
+  end
+
+  def send_after(message, delay) do
+    delay_queue()
+    |> SQS.send_message(message, delay_seconds: delay)
     |> ExAws.request(aws_config())
   end
 
   def recv do
     result =
-      queue()
+      message_queue()
       |> SQS.receive_message()
       |> ExAws.request(aws_config())
 
@@ -37,14 +43,16 @@ defmodule Dawdle.Backend.SQS do
         {%{id: Integer.to_string(id), receipt_handle: m.receipt_handle}, id + 1}
       end)
 
-    queue()
+    message_queue()
     |> SQS.delete_message_batch(del_list)
     |> ExAws.request(aws_config())
 
     :ok
   end
 
-  defp queue, do: config(:queue)
+  defp message_queue, do: config(:message_queue)
+
+  defp delay_queue, do: config(:delay_queue)
 
   defp aws_config, do: [region: config(:region)]
 

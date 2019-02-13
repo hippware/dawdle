@@ -10,6 +10,10 @@ defmodule Dawdle.Application do
     ]
 
     opts = [strategy: :one_for_one, name: Dawdle.Supervisor]
-    Supervisor.start_link(children, opts)
+    sup = Supervisor.start_link(children, opts)
+
+    Dawdle.Delay.Handler.register()
+
+    sup
   end
 end
