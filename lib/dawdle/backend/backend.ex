@@ -3,15 +3,17 @@ defmodule Dawdle.Backend do
   Behaviour module for Dawdle backend implementation
   """
 
+  @type queue :: binary()
   @type send_message :: binary()
   @type recv_message :: map()
   @type delay_secs :: non_neg_integer()
 
   @callback init() :: :ok
+  @callback queues() :: [queue()]
   @callback send([send_message()]) :: :ok | {:error, term()}
   @callback send_after(send_message(), delay_secs()) :: :ok | {:error, term()}
-  @callback recv() :: {:ok, [recv_message()]} | {:error, term()}
-  @callback delete([recv_message()]) :: :ok
+  @callback recv(queue()) :: {:ok, [recv_message()]} | {:error, term()}
+  @callback delete(queue(), [recv_message()]) :: :ok
 
   @type new() :: Module
   def new do

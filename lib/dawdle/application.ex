@@ -6,7 +6,8 @@ defmodule Dawdle.Application do
   def start(_type, _args) do
     # List all child processes to be supervised
     children = [
-      {Dawdle.Client, []}
+      Dawdle.Poller.Supervisor,
+      Dawdle.Client
     ]
 
     opts = [strategy: :one_for_one, name: Dawdle.Supervisor]

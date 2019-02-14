@@ -17,6 +17,8 @@ defmodule Dawdle.Backend.Local do
     {:ok, {[], []}}
   end
 
+  def queues, do: ["local-test"]
+
   def send(messages), do: GenServer.cast(__MODULE__, {:send, messages})
 
   def send_after(message, delay) do
@@ -27,9 +29,9 @@ defmodule Dawdle.Backend.Local do
     :ok
   end
 
-  def recv, do: GenServer.call(__MODULE__, :recv, :infinity)
+  def recv(_), do: GenServer.call(__MODULE__, :recv, :infinity)
 
-  def delete(_), do: :ok
+  def delete(_, _), do: :ok
 
   def flush, do: GenServer.call(__MODULE__, :flush)
 

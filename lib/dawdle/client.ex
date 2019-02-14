@@ -13,7 +13,7 @@ defmodule Dawdle.Client do
 
   alias Dawdle.Backend
   alias Dawdle.MessageEncoder.Term, as: MessageEncoder
-  alias Dawdle.Poller
+  alias Dawdle.Poller.Supervisor, as: PollerSup
 
   require Logger
 
@@ -53,12 +53,17 @@ defmodule Dawdle.Client do
 
   def init(_) do
     backend = Backend.new()
+    state = %State{backend: backend, subscribers: %{}}
 
+    {:ok, state, {:continue, true}}
+  end
+
+  def handle_continue(_, state) do
     if Confex.get_env(:dawdle, :start_listener) do
-      Poller.start_link(backend, __MODULE__)
+      PollerSup.start_pollers(state.backend, __MODULE__)
     end
 
-    {:ok, %State{backend: backend, subscribers: %{}}}
+    {:noreply, state}
   end
 
   def handle_cast({:recv, events}, state) do

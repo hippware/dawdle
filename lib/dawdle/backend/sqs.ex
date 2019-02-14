@@ -7,6 +7,8 @@ defmodule Dawdle.Backend.SQS do
 
   def init, do: :ok
 
+  def queues, do: [message_queue(), delay_queue()]
+
   def send([message]) do
     message_queue()
     |> SQS.send_message(message)
@@ -25,25 +27,25 @@ defmodule Dawdle.Backend.SQS do
     |> ExAws.request(aws_config())
   end
 
-  def recv do
+  def recv(queue) do
     result =
-      message_queue()
+      queue
       |> SQS.receive_message()
       |> ExAws.request(aws_config())
 
     case result do
-      {:ok, %{body: %{messages: []}}} -> recv()
+      {:ok, %{body: %{messages: []}}} -> recv(queue)
       {:ok, %{body: %{messages: messages}}} -> {:ok, messages}
     end
   end
 
-  def delete(messages) do
+  def delete(queue, messages) do
     {del_list, _} =
       Enum.map_reduce(messages, 0, fn m, id ->
         {%{id: Integer.to_string(id), receipt_handle: m.receipt_handle}, id + 1}
       end)
 
-    message_queue()
+    queue
     |> SQS.delete_message_batch(del_list)
     |> ExAws.request(aws_config())
 
