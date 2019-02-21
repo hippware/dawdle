@@ -12,19 +12,25 @@ defmodule Dawdle.Backend.SQS do
   def send([message]) do
     message_queue()
     |> SQS.send_message(message)
-    |> ExAws.request(aws_config())
+    |> send_request()
   end
 
   def send(messages) do
     message_queue()
     |> SQS.send_message_batch(batchify(messages))
-    |> ExAws.request(aws_config())
+    |> send_request()
   end
 
   def send_after(message, delay) do
     delay_queue()
     |> SQS.send_message(message, delay_seconds: delay)
-    |> ExAws.request(aws_config())
+    |> send_request()
+  end
+
+  defp send_request(request) do
+    with {:ok, _} <- ExAws.request(request, aws_config()) do
+      :ok
+    end
   end
 
   def recv(queue) do

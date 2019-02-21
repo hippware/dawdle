@@ -22,7 +22,7 @@ defmodule Dawdle.ClientTest do
   test "basic signal handling" do
     t = %TestEvent{pid: self()}
 
-    Dawdle.signal(t)
+    :ok = Dawdle.signal(t)
 
     assert_receive :handled
   end
@@ -35,7 +35,7 @@ defmodule Dawdle.ClientTest do
 
     t = %TestEvent{pid: self()}
 
-    Dawdle.signal(t)
+    :ok = Dawdle.signal(t)
 
     assert_receive :handled
     assert_receive :rehandled
@@ -46,7 +46,7 @@ defmodule Dawdle.ClientTest do
 
     t = %TestEvent{pid: self()}
 
-    Dawdle.signal(t)
+    :ok = Dawdle.signal(t)
 
     assert_receive :handled
   end

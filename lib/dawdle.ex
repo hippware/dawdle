@@ -16,6 +16,6 @@ defmodule Dawdle do
   @spec call_after(duration(), fun()) :: :ok | {:error, term()}
   defdelegate call_after(delay, fun), to: Dawdle.Delay.Handler
 
-  @spec signal(event()) :: :ok
+  @spec signal(event()) :: :ok | {:error, term()}
   defdelegate signal(event), to: Dawdle.Client
 end

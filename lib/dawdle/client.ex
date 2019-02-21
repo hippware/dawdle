@@ -74,17 +74,17 @@ defmodule Dawdle.Client do
   def handle_call({:signal, event}, _from, state) do
     message = MessageEncoder.encode(event)
 
-    state.backend.send([message])
+    result = state.backend.send([message])
 
-    {:reply, :ok, state}
+    {:reply, result, state}
   end
 
   def handle_call({:signal, event, delay}, _from, state) do
     message = MessageEncoder.encode(event)
 
-    state.backend.send_after(message, delay)
+    result = state.backend.send_after(message, delay)
 
-    {:reply, :ok, state}
+    {:reply, result, state}
   end
 
   def handle_call({:subscribe, object, fun}, _from, state) do
