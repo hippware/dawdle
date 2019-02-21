@@ -24,7 +24,7 @@ defmodule Dawdle.ClientTest do
 
     :ok = Dawdle.signal(t)
 
-    assert_receive :handled
+    assert_receive :handled, 25_000
   end
 
   test "multiple handlers" do
@@ -37,8 +37,8 @@ defmodule Dawdle.ClientTest do
 
     :ok = Dawdle.signal(t)
 
-    assert_receive :handled
-    assert_receive :rehandled
+    assert_receive :handled, 25_000
+    assert_receive :rehandled, 25_000
   end
 
   test "handler crash" do
@@ -48,7 +48,7 @@ defmodule Dawdle.ClientTest do
 
     :ok = Dawdle.signal(t)
 
-    assert_receive :handled
+    assert_receive :handled, 25_000
   end
 
   test "subscribe/2" do
