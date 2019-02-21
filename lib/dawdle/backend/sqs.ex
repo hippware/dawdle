@@ -3,6 +3,8 @@ defmodule Dawdle.Backend.SQS do
 
   alias ExAws.SQS
 
+  require Logger
+
   @behaviour Dawdle.Backend
   @group_id "dawdle_db"
 
@@ -11,12 +13,19 @@ defmodule Dawdle.Backend.SQS do
   def queues, do: [message_queue(), delay_queue()]
 
   def send([message]) do
-    message_queue()
-    |> SQS.send_message(message,
-      message_group_id: @group_id,
-      message_deduplication_id: id()
+    result =
+      message_queue()
+      |> SQS.send_message(message,
+        message_group_id: @group_id,
+        message_deduplication_id: id()
+      )
+      |> send_request()
+
+    Logger.info(
+      "Sent message to #{message_queue()} with result #{result}: #{message}"
     )
-    |> send_request()
+
+    result
   end
 
   def send(messages) do
@@ -43,9 +52,17 @@ defmodule Dawdle.Backend.SQS do
       |> SQS.receive_message()
       |> ExAws.request(aws_config())
 
+    Logger.debug(fn ->
+      "Receive results from queue #{queue}: #{inspect(result)}"
+    end)
+
     case result do
-      {:ok, %{body: %{messages: []}}} -> recv(queue)
-      {:ok, %{body: %{messages: messages}}} -> {:ok, messages}
+      {:ok, %{body: %{messages: []}}} ->
+        recv(queue)
+
+      {:ok, %{body: %{messages: messages}}} ->
+        Logger.info("Received messages from '#{queue}': #{inspect(messages)}")
+        {:ok, messages}
     end
   end
 
@@ -58,6 +75,8 @@ defmodule Dawdle.Backend.SQS do
     queue
     |> SQS.delete_message_batch(del_list)
     |> ExAws.request(aws_config())
+
+    Logger.info("Deleted messages from '#{queue}': #{inspect(messages)}")
 
     :ok
   end
@@ -83,10 +102,13 @@ defmodule Dawdle.Backend.SQS do
   defp batchify(messages) do
     Enum.map(messages, fn m ->
       id = id()
-      [id: id,
-       message_body: m,
-       message_deduplication_id: id,
-       message_group_id: @group_id]
+
+      [
+        id: id,
+        message_body: m,
+        message_deduplication_id: id,
+        message_group_id: @group_id
+      ]
     end)
   end
 end
