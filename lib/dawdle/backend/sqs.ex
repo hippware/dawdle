@@ -4,6 +4,7 @@ defmodule Dawdle.Backend.SQS do
   alias ExAws.SQS
 
   @behaviour Dawdle.Backend
+  @group_id "dawdle_db"
 
   def init, do: :ok
 
@@ -11,7 +12,10 @@ defmodule Dawdle.Backend.SQS do
 
   def send([message]) do
     message_queue()
-    |> SQS.send_message(message)
+    |> SQS.send_message(message,
+      message_group_id: @group_id,
+      message_deduplication_id: id()
+    )
     |> send_request()
   end
 
@@ -79,7 +83,10 @@ defmodule Dawdle.Backend.SQS do
   defp batchify(messages) do
     Enum.map(messages, fn m ->
       id = id()
-      [id: id, message_body: m]
+      [id: id,
+       message_body: m,
+       message_deduplication_id: id,
+       message_group_id: @group_id]
     end)
   end
 end
