@@ -51,6 +51,17 @@ defmodule Dawdle.Client do
     GenServer.call(__MODULE__, :clear_all_subscriptions)
   end
 
+  def stop_listeners do
+    PollerSup
+    |> Supervisor.which_children()
+    |> Enum.each(fn {id, _, _, _} ->
+      Supervisor.terminate_child(PollerSup, id)
+      Supervisor.delete_child(PollerSup, id)
+    end)
+
+    :ok
+  end
+
   def init(_) do
     backend = Backend.new()
     state = %State{backend: backend, subscribers: %{}}
