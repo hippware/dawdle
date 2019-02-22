@@ -23,7 +23,7 @@ defmodule Dawdle.Backend.SQS do
 
     Logger.info(
       "Sent message to #{message_queue()} with result '#{inspect(result)}': " <>
-      "#{inspect(message, pretty: true)}"
+        "#{inspect(message, pretty: true)}"
     )
 
     result
@@ -37,7 +37,7 @@ defmodule Dawdle.Backend.SQS do
 
     Logger.info(
       "Sent #{length(messages)} messages to #{message_queue()} with result " <>
-      "'#{inspect(result)}': #{inspect(messages, pretty: true)}"
+        "'#{inspect(result)}': #{inspect(messages, pretty: true)}"
     )
 
     result
@@ -51,7 +51,7 @@ defmodule Dawdle.Backend.SQS do
 
     Logger.info(
       "Sent delayed message to #{delay_queue()} with result " <>
-      "'#{inspect(result)}': #{inspect(message, pretty: true)}"
+        "'#{inspect(result)}': #{inspect(message, pretty: true)}"
     )
 
     result
@@ -108,7 +108,7 @@ defmodule Dawdle.Backend.SQS do
   end
 
   defp do_flush(queue) do
-    Logger.debug("Purging queue '#{queue}'")
+    Logger.debug(fn -> "Purging queue '#{queue}'" end)
 
     queue
     |> SQS.purge_queue()

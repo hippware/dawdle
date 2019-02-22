@@ -3,6 +3,8 @@ defmodule Dawdle.Application do
 
   use Application
 
+  alias Dawdle.Delay.Handler, as: DelayHandler
+
   def start(_type, _args) do
     # List all child processes to be supervised
     children = [
@@ -13,7 +15,7 @@ defmodule Dawdle.Application do
     opts = [strategy: :one_for_one, name: Dawdle.Supervisor]
     sup = Supervisor.start_link(children, opts)
 
-    Dawdle.Delay.Handler.register()
+    DelayHandler.register()
 
     sup
   end

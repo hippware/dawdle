@@ -1,8 +1,10 @@
 defmodule Dawdle.Delay.HandlerTest do
   use ExUnit.Case
 
+  alias Dawdle.Delay.Handler, as: DelayHandler
+
   setup_all do
-    Dawdle.Delay.Handler.register()
+    DelayHandler.register()
   end
 
   test "delayed function call" do
