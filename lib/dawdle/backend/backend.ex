@@ -14,6 +14,7 @@ defmodule Dawdle.Backend do
   @callback send_after(send_message(), delay_secs()) :: :ok | {:error, term()}
   @callback recv(queue()) :: {:ok, [recv_message()]} | {:error, term()}
   @callback delete(queue(), [recv_message()]) :: :ok
+  @callback flush() :: :ok
 
   @type new() :: Module
   def new do
