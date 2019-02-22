@@ -22,22 +22,39 @@ defmodule Dawdle.Backend.SQS do
       |> send_request()
 
     Logger.info(
-      "Sent message to #{message_queue()} with result #{result}: #{message}"
+      "Sent message to #{message_queue()} with result '#{inspect(result)}': " <>
+      "#{inspect(message, pretty: true)}"
     )
 
     result
   end
 
   def send(messages) do
-    message_queue()
-    |> SQS.send_message_batch(batchify(messages))
-    |> send_request()
+    result =
+      message_queue()
+      |> SQS.send_message_batch(batchify(messages))
+      |> send_request()
+
+    Logger.info(
+      "Sent #{length(messages)} messages to #{message_queue()} with result " <>
+      "'#{inspect(result)}': #{inspect(messages, pretty: true)}"
+    )
+
+    result
   end
 
   def send_after(message, delay) do
-    delay_queue()
-    |> SQS.send_message(message, delay_seconds: delay)
-    |> send_request()
+    result =
+      delay_queue()
+      |> SQS.send_message(message, delay_seconds: delay)
+      |> send_request()
+
+    Logger.info(
+      "Sent delayed message to #{delay_queue()} with result " <>
+      "'#{inspect(result)}': #{inspect(message, pretty: true)}"
+    )
+
+    result
   end
 
   defp send_request(request) do
@@ -49,11 +66,11 @@ defmodule Dawdle.Backend.SQS do
   def recv(queue) do
     result =
       queue
-      |> SQS.receive_message()
+      |> SQS.receive_message(max_number_of_messages: 10)
       |> ExAws.request(aws_config())
 
     Logger.debug(fn ->
-      "Receive results from queue #{queue}: #{inspect(result)}"
+      "Receive results from queue #{queue}: #{inspect(result, pretty: true)}"
     end)
 
     case result do
@@ -61,7 +78,10 @@ defmodule Dawdle.Backend.SQS do
         recv(queue)
 
       {:ok, %{body: %{messages: messages}}} ->
-        Logger.info("Received messages from '#{queue}': #{inspect(messages)}")
+        Logger.info(
+          "Received messages from '#{queue}': #{inspect(messages, pretty: true)}"
+        )
+
         {:ok, messages}
     end
   end
@@ -76,7 +96,9 @@ defmodule Dawdle.Backend.SQS do
     |> SQS.delete_message_batch(del_list)
     |> ExAws.request(aws_config())
 
-    Logger.info("Deleted messages from '#{queue}': #{inspect(messages)}")
+    Logger.info(
+      "Deleted messages from '#{queue}': #{inspect(messages, pretty: true)}"
+    )
 
     :ok
   end
