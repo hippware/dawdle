@@ -19,6 +19,13 @@ defmodule Dawdle.BackendTest do
     message_queue = hd(backend.queues())
     delay_queue = hd(Enum.reverse(backend.queues()))
 
+    on_exit fn ->
+      # Restart the application to ensure that the pollers are running
+      # for other tests.
+      Application.stop(:dawdle)
+      Application.start(:dawdle)
+    end
+
     {:ok,
       backend: backend,
       message_queue: message_queue,
