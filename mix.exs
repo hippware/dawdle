@@ -1,14 +1,17 @@
 defmodule Dawdle.MixProject do
   use Mix.Project
 
+  @version "0.4.0"
+
   def project do
     [
       app: :dawdle,
-      version: "0.4.0",
+      version: @version,
       elixir: "~> 1.6",
       start_permanent: Mix.env() == :prod,
       description: description(),
       package: package(),
+      docs: docs(),
       deps: deps(),
       source_url: "https://github.com/hippware/dawdle",
       test_coverage: [tool: ExCoveralls],
@@ -55,6 +58,28 @@ defmodule Dawdle.MixProject do
       maintainers: ["Bernard Duggan", "Phil Toland"],
       licenses: ["MIT"],
       links: %{"GitHub" => "https://github.com/hippware/dawdle"}
+    ]
+  end
+
+  defp docs do
+    [
+      source_ref: "v#\{@version\}",
+      main: "readme",
+      extras: ["README.md"],
+      groups_for_modules: [
+        "API": [
+          Dawdle,
+          Dawdle.Client,
+          Dawdle.Handler
+        ],
+        "Backend Implementation": [
+          Dawdle.Backend,
+          Dawdle.Backend.Local,
+          Dawdle.Backend.SQS,
+          Dawdle.MessageEncoder,
+          Dawdle.MessageEncoder.Term
+        ]
+      ]
     ]
   end
 end
