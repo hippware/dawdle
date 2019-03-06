@@ -62,17 +62,26 @@ application. AWS authentication is handled by
 something else, your configuration should already be good. If not, follow the
 configuration instructions on that page to set up your AWS key.
 
-The queues themselves *must* be SQS's "Standard Queue" (not "FIFO Queue").
+Dawdle uses two queues: one for normal messages and one for delayed events. The
+message queue *must* be a FIFO Queue and the delay queue *must* be a Standard
+Queue. They can be configured with default values, __except__ that
+`Receive Message Wait Time` should be set to 20 seconds.
 
-They can be configured with default values, __except__ that:
-* `Receive Message Wait Time` should be set to 20 seconds.
+The queues can be created using the `aws` CLI or from the AWS Control Panel.
 
-## Performance Considerations
+Here are example commands for creating the queues from the CLI:
 
-The supplied callback is called by the same process which handles messages from
-the SQS queue. In order to avoid blocking this process (and therefore delaying
-further events), the callback should do as little work as possible - ideally
-just firing a message to a different process.
+```
+$ aws sqs create-queue --queue-name my-dawdle-delay-queue --attributes ReceiveMessageWaitTimeSeconds=20
+{
+    "QueueUrl": "https://xx-xxxx-x.queue.amazonaws.com/XXXXXXXXXXXX/my-dawdle-delay-queue"
+}
+
+$ aws sqs create-queue --queue-name my-dawdle-message-queue.fifo --attributes FifoQueue=true,ReceiveMessageWaitTimeSeconds=20
+{
+    "QueueUrl": "https://xx-xxxx-x.queue.amazonaws.com/XXXXXXXXXXXX/my-dawdle-message-queue.fifo"
+}
+```
 
 ## Use
 
