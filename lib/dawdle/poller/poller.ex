@@ -36,6 +36,6 @@ defmodule Dawdle.Poller do
   end
 
   def name(queue) do
-    String.to_atom(Atom.to_string(__MODULE__) <> queue)
+    Module.concat(__MODULE__, queue)
   end
 end
