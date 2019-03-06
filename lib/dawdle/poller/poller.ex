@@ -1,8 +1,8 @@
 defmodule Dawdle.Poller do
-  @moduledoc """
-  A simple module that turns a blocking "pull" event source into a "push" one
-  that sends to another process.
-  """
+  @moduledoc false
+
+  # A simple module that turns a blocking "pull" event source into a "push" one
+  # that sends to another process.
 
   require Logger
 

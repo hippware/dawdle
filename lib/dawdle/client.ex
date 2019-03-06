@@ -1,7 +1,9 @@
 defmodule Dawdle.Client do
   @moduledoc """
-  The client for the DawdleDB - entities interested in queue events
-  should subscribe to this process.
+  Manages subscriptions and polling of the event queues.
+
+  Note that it is better to use the API provided by the `Dawdle` and
+  `Dawdle.Handler` modules than the lower-level API described here.
   """
 
   defmodule State do
@@ -17,40 +19,75 @@ defmodule Dawdle.Client do
 
   require Logger
 
-  @doc false
-  def start_link(_), do: GenServer.start_link(__MODULE__, nil, name: __MODULE__)
+  @doc """
+  Signals an event.
 
-  @doc false
-  def recv(events), do: GenServer.cast(__MODULE__, {:recv, events})
-
-  def signal(object) do
-    GenServer.call(__MODULE__, {:signal, object})
+  The event data is encoded and enqueued. It will then be dequeued and passed
+  to an event handler on a node with the listener running.
+  """
+  @spec signal(Dawdle.event()) :: :ok | {:error, term()}
+  def signal(event) do
+    GenServer.call(__MODULE__, {:signal, event})
   end
 
-  def signal(object, delay) do
-    GenServer.call(__MODULE__, {:signal, object, delay})
+  @doc """
+  Signals an event with a delay.
+
+  See `signal/1`.
+  """
+  @spec signal(Dawdle.event(), Dawdle.duration()) :: :ok | {:error, term()}
+  def signal(event, delay) do
+    GenServer.call(__MODULE__, {:signal, event, delay})
   end
 
-  def subscribe(object, fun) do
-    GenServer.call(__MODULE__, {:subscribe, object, fun})
+  @doc """
+  Subscribes to an event.
+
+  After calling this function, the next time the specified event occurs, then
+  the handler function will be called with data from that event.
+
+  The return value is used to unsubscribe.
+  """
+  @spec subscribe(Dawdle.event(), Dawdle.handler()) :: {:ok, reference()}
+  def subscribe(event, fun) do
+    GenServer.call(__MODULE__, {:subscribe, event, fun})
   end
 
+  @doc """
+  Unsubscribes from an event.
+
+  The `ref` parameter is taken from the return value of `subscribe/2`.
+  """
+  @spec unsubscribe(reference()) :: :ok
   def unsubscribe(ref) do
     GenServer.call(__MODULE__, {:unsubscribe, ref})
   end
 
+  @doc """
+  Returns the total number of subscribers.
+  """
+  @spec subscriber_count :: non_neg_integer()
   def subscriber_count do
     GenServer.call(__MODULE__, :subscriber_count)
   end
 
-  def subscriber_count(object) do
-    GenServer.call(__MODULE__, {:subscriber_count, object})
+  @doc """
+  Returns the number of subscribers to a specific event.
+  """
+  @spec subscriber_count(Dawdle.event()) :: non_neg_integer()
+  def subscriber_count(event) do
+    GenServer.call(__MODULE__, {:subscriber_count, event})
   end
 
+  # These functions are used for testing and not considered part of the API.
+  # Their use in a production application is dangerous.
+
+  @doc false
   def clear_all_subscriptions do
     GenServer.call(__MODULE__, :clear_all_subscriptions)
   end
 
+  @doc false
   def stop_listeners do
     PollerSup
     |> Supervisor.which_children()
@@ -62,6 +99,16 @@ defmodule Dawdle.Client do
     :ok
   end
 
+  # This function is called by the poller when new events are ready
+  @doc false
+  def recv(events), do: GenServer.cast(__MODULE__, {:recv, events})
+
+  # GenServer implementation
+
+  @doc false
+  def start_link(_), do: GenServer.start_link(__MODULE__, nil, name: __MODULE__)
+
+  @impl true
   def init(_) do
     backend = Backend.new()
     state = %State{backend: backend, subscribers: %{}}
@@ -69,6 +116,7 @@ defmodule Dawdle.Client do
     {:ok, state, {:continue, true}}
   end
 
+  @impl true
   def handle_continue(_, state) do
     if Confex.get_env(:dawdle, :start_listener) do
       PollerSup.start_pollers(state.backend, __MODULE__)
@@ -77,11 +125,13 @@ defmodule Dawdle.Client do
     {:noreply, state}
   end
 
+  @impl true
   def handle_cast({:recv, events}, state) do
     Enum.each(events, &forward_event(&1, state))
     {:noreply, state}
   end
 
+  @impl true
   def handle_call({:signal, event}, _from, state) do
     message = MessageEncoder.encode(event)
 
@@ -90,6 +140,7 @@ defmodule Dawdle.Client do
     {:reply, result, state}
   end
 
+  @impl true
   def handle_call({:signal, event, delay}, _from, state) do
     message = MessageEncoder.encode(event)
 
@@ -98,6 +149,7 @@ defmodule Dawdle.Client do
     {:reply, result, state}
   end
 
+  @impl true
   def handle_call({:subscribe, object, fun}, _from, state) do
     current = Map.get(state.subscribers, object, MapSet.new())
     ref = make_ref()
@@ -108,6 +160,7 @@ defmodule Dawdle.Client do
     {:reply, {:ok, ref}, %State{state | subscribers: new_subscribers}}
   end
 
+  @impl true
   def handle_call({:unsubscribe, ref}, _from, state) do
     new_subscribers =
       state.subscribers
@@ -117,6 +170,7 @@ defmodule Dawdle.Client do
     {:reply, :ok, %State{state | subscribers: new_subscribers}}
   end
 
+  @impl true
   def handle_call(:subscriber_count, _from, state) do
     count =
       Enum.reduce(state.subscribers, 0, fn {_, x}, acc ->
@@ -126,12 +180,14 @@ defmodule Dawdle.Client do
     {:reply, count, state}
   end
 
+  @impl true
   def handle_call({:subscriber_count, object}, _from, state) do
     subscribers = Map.get(state.subscribers, object, MapSet.new())
 
     {:reply, MapSet.size(subscribers), state}
   end
 
+  @impl true
   def handle_call(:clear_all_subscriptions, _from, state) do
     {:reply, :ok, %State{state | subscribers: %{}}}
   end
