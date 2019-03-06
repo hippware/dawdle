@@ -42,7 +42,15 @@ config :dawdle,
     backend: Dawdle.Backend.SQS
 ```
 
-You can also set the environment variable `DAWDLE_BACKEND`.
+To disable the Dawdle queue listener on a node, use the following:
+
+```elixir
+config :dawdle,
+    start_listener: false
+```
+
+You can also set the environment variables `DAWDLE_BACKEND` or
+`DAWDLE_START_LISTENER`.
 
 To configure your SQS queues, set the following:
 
@@ -52,6 +60,9 @@ config :dawdle, Dawdle.Backend.SQS,
     delay_queue: "my-dawdle-delay-queue",
     message_queue: "my-dawdle-message-queue.fifo"
 ```
+
+These values can also be set by using the environment variables
+`DAWDLE_SQS_REGION`, `DAWDLE_SQS_DELAY_QUEUE`, and `DAWDLE_SQS_MESSAGE_QUEUE`.
 
 
 ## Setting Up Your SQS Queues
