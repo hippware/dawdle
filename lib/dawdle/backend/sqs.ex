@@ -1,5 +1,7 @@
 defmodule Dawdle.Backend.SQS do
-  @moduledoc false
+  @moduledoc """
+  Implementation of the `Dawdle.Backend` behaviour for Amazon SQS.
+  """
 
   alias ExAws.SQS
 
@@ -8,10 +10,13 @@ defmodule Dawdle.Backend.SQS do
   @behaviour Dawdle.Backend
   @group_id "dawdle_db"
 
+  @impl true
   def init, do: :ok
 
+  @impl true
   def queues, do: [message_queue(), delay_queue()]
 
+  @impl true
   def send([message]) do
     result =
       message_queue()
@@ -43,6 +48,7 @@ defmodule Dawdle.Backend.SQS do
     result
   end
 
+  @impl true
   def send_after(message, delay) do
     result =
       delay_queue()
@@ -63,6 +69,7 @@ defmodule Dawdle.Backend.SQS do
     end
   end
 
+  @impl true
   def recv(queue) do
     result =
       queue
@@ -86,6 +93,7 @@ defmodule Dawdle.Backend.SQS do
     end
   end
 
+  @impl true
   def delete(queue, messages) do
     {del_list, _} =
       Enum.map_reduce(messages, 0, fn m, id ->
@@ -103,6 +111,7 @@ defmodule Dawdle.Backend.SQS do
     :ok
   end
 
+  @impl true
   def flush do
     Enum.each(queues(), &do_flush(&1))
   end

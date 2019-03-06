@@ -1,6 +1,8 @@
 defmodule Dawdle.Backend do
   @moduledoc """
-  Behaviour module for Dawdle backend implementation
+  Behaviour for Dawdle backends.
+
+  Dawdle backends are responsible for interfacing with the actual message queue.
   """
 
   @type queue :: binary()
@@ -16,7 +18,13 @@ defmodule Dawdle.Backend do
   @callback delete(queue(), [recv_message()]) :: :ok
   @callback flush() :: :ok
 
-  @type new() :: Module
+  @doc """
+  Returns an initialized backend.
+
+  Looks up the preferred backend in the application environment and calls the
+  backend's `c:init/0` callback.
+  """
+  @spec new() :: Module
   def new do
     backend = Confex.get_env(:dawdle, :backend)
 

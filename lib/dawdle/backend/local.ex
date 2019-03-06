@@ -1,7 +1,10 @@
 defmodule Dawdle.Backend.Local do
   @moduledoc """
-  The local backend for the Dawdle DB watcher. This is used only for testing
-  in development where SQS is not available.
+  Implementation of the `Dawdle.Backend` behaviour that queues all events
+  locally on a single node.
+
+  This is intended for use in testing and development where a "live" backend
+  like SQS is not available or desirable.
   """
 
   use GenServer
