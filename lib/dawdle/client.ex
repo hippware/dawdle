@@ -120,10 +120,23 @@ defmodule Dawdle.Client do
   def handle_continue(_, state) do
     if Confex.get_env(:dawdle, :start_listener) do
       PollerSup.start_pollers(state.backend, __MODULE__)
+      Task.start(&auto_register_handlers/0)
     end
 
     {:noreply, state}
   end
+
+  defp auto_register_handlers do
+    for {mod, _} <- :code.all_loaded() do
+      mod.module_info(:attributes)
+      |> Keyword.get(:behaviour, [])
+      |> Enum.member?(Dawdle.Handler)
+      |> maybe_register_handler(mod)
+    end
+  end
+
+  defp maybe_register_handler(true, mod), do: mod.register()
+  defp maybe_register_handler(false, _), do: :ok
 
   @impl true
   def handle_cast({:recv, events}, state) do

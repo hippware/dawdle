@@ -150,12 +150,7 @@ defmodule MyApp.TestEventHandler do
 end
 ```
 
-3. Register the event handler
-```elixir
-MyApp.TestEventHandler.register()
-```
-
-4. Signal an event
+3. Signal an event
 ```elixir
 t = %MyApp.TestEvent{foo: 1, bar: 2}
 
