@@ -99,31 +99,6 @@ $ aws sqs create-queue --queue-name my-dawdle-message-queue.fifo --attributes Fi
 Full docs can be found at
 [https://hexdocs.pm/dawdle](https://hexdocs.pm/dawdle).
 
-### Basics
-
-The most basic way to use Dawdle is to pass a simple function to
-`Dawdle.call/1`.  The function will execute on a node running the Dawdle
-application with pollers enabled.
-
-```elixir
-iex> Dawdle.call(fn -> IO.puts("Hello World!") end)
-:ok
-Hello World!
-```
-
-Passing a function to `Dawdle.call_after/2` will result in that function being
-called after the specified delay.
-
-```elixir
-iex> Dawdle.call_after(2000, fn -> IO.puts("Hello Future!") end)
-:ok
-
-# 2 seconds later
-Hello Future!
-```
-
-### Event Handlers
-
 Event handlers are where Dawdle really begins to shine. An event is essentially
 just an Elixir struct. Define an event and event handler, then when you signal
 that event using Dawdle, the event handler will be called to process the
@@ -139,7 +114,7 @@ end
 2. Create an event handler
 ```elixir
 defmodule MyApp.TestEventHandler do
-  use Dawdle.Handler, types: [MyApp.TestEvent]
+  use Dawdle.Handler, only: [MyApp.TestEvent]
 
   alias MyApp.TestEvent
 
@@ -192,3 +167,10 @@ in a persistent store first and send the key through Dawdle.
 SQS delays are limited to 15 minutes. We handle longer delays by using
 multiple chained messages, so factor this into any capacity calculations you're
 doing.
+
+## TODO
+
+- [ ] Add tests for Poller and MessageEncoder
+- [ ] Figure out a better way to test the SQS backend
+- [ ] Have multiple backends running at the same time and allow callers to
+specify which backends events will be dispatched via.

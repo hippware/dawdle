@@ -14,7 +14,7 @@ defmodule Dawdle.Handler do
   end
 
   defmodule MyApp.TestEventHandler do
-    use Dawdle.Handler, types: [MyApp.TestEvent]
+    use Dawdle.Handler, only: [MyApp.TestEvent]
 
     alias MyApp.TestEvent
 
@@ -45,17 +45,17 @@ defmodule Dawdle.Handler do
 
   defmacro __using__(opts) do
     quote do
-      alias Dawdle.Client
-
       @behaviour Dawdle.Handler
 
       def register do
-        Enum.each(unquote(opts[:types]), fn t ->
-          Client.subscribe(t, &handle_event/1)
-        end)
+        Dawdle.register_handler(__MODULE__, unquote(opts))
       end
 
-      @spec handle_event(struct()) :: no_return()
+      def unregister do
+        Dawdle.unregister_handler(__MODULE__)
+      end
+
+      @impl Dawdle.Handler
       def handle_event(_event) do
         raise UndefinedFunctionError,
               "#{inspect(__MODULE__)} handle_event/1 not defined"

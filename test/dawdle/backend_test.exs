@@ -8,9 +8,13 @@ defmodule Dawdle.BackendTest do
 
   alias Dawdle.Backend
 
-  setup do
-    Dawdle.Client.stop_listeners()
+  setup_all do
+    Application.stop(:dawdle)
 
+    on_exit fn -> Application.start(:dawdle) end
+  end
+
+  setup do
     backend = Backend.new()
 
     backend.flush()
@@ -18,13 +22,6 @@ defmodule Dawdle.BackendTest do
     # This is cheating a little bit to get the queue names
     message_queue = hd(backend.queues())
     delay_queue = hd(Enum.reverse(backend.queues()))
-
-    on_exit fn ->
-      # Restart the application to ensure that the pollers are running
-      # for other tests.
-      Application.stop(:dawdle)
-      Application.start(:dawdle)
-    end
 
     {:ok,
       backend: backend,

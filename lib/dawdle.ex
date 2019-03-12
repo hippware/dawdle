@@ -4,62 +4,8 @@ defmodule Dawdle do
   """
 
   @type duration :: non_neg_integer()
-  @type fun :: (() -> any())
   @type event :: struct()
-  @type handler :: ((event()) -> any())
-
-  @doc """
-  Send a function to be executed.
-
-  The function is encoded and enqueued and will be executed on a node running
-  the Dawdle listener. Even if the listener is running on the current node,
-  the function may still be executed on another node.
-
-  The passed function is evaluated for its side effects and any return value
-  is ignored.
-
-  Returns `:ok` when the function is successfully enqueued. Otherwise, returns
-  an error tuple.
-
-  ## Examples
-
-  ```
-  iex> Dawdle.call(fn ->
-  ...> # Do something expensive...
-  ...> :ok
-  ...> end)
-  :ok
-  ```
-  """
-  @spec call(fun()) :: :ok | {:error, term()}
-  defdelegate call(fun), to: Dawdle.Delay.Handler
-
-  @doc """
-  Send a function to be executed after a delay.
-
-  The function is encoded and enqueued and will be executed on a node running
-  the Dawdle listener after the specified delay. Even if the listener is
-  running on the current node, the function may still be executed on another
-  node.
-
-  The passed function is evaluated for its side effects and any return value
-  is ignored.
-
-  Returns `:ok` when the function is successfully enqueued. Otherwise, returns
-  an error tuple.
-
-  ## Examples
-
-  ```
-  iex> Dawdle.call_after(5, fn ->
-  ...> # Do something later...
-  ...> :ok
-  ...> end)
-  :ok
-  ```
-  """
-  @spec call_after(duration(), fun()) :: :ok | {:error, term()}
-  defdelegate call_after(delay, fun), to: Dawdle.Delay.Handler
+  @type handler :: module()
 
   @doc """
   Signals an event.
@@ -67,6 +13,8 @@ defmodule Dawdle do
   The event is encoded and enqueued and will be processed by a handler running
   on a node running the Dawdle listener. See `Dawdle.Handler` for information
   on creating event handlers.
+
+  Use the `:delay` option to delay the signaling of the event.
 
   Returns `:ok` when the event is successfully enqueued. Otherwise, returns
   an error tuple.
@@ -79,8 +27,37 @@ defmodule Dawdle do
   end
 
   Dawdle.signal(%MyApp.TestEvent{foo: 1, bar: 2})
+
+  Dawdle.signal(%MyApp.TestEvent{foo: 1, bar: 2}, delay: 5)
   ```
   """
-  @spec signal(event()) :: :ok | {:error, term()}
-  defdelegate signal(event), to: Dawdle.Client
+  @spec signal(event(), Keyword.t()) :: :ok | {:error, term()}
+  defdelegate signal(event, opts \\ []), to: Dawdle.Client
+
+  @doc """
+  Registers an event handler.
+
+  After calling this function, the next time the specified event occurs, then
+  the handler function will be called with data from that event.
+  """
+  @spec register_handler(handler(), Keyword.t()) :: :ok | {:error, term()}
+  defdelegate register_handler(handler, opts \\ []), to: Dawdle.Client
+
+  @doc """
+  Unregisters an event handler.
+  """
+  @spec unregister_handler(handler()) :: :ok
+  defdelegate unregister_handler(handler), to: Dawdle.Client
+
+  @doc """
+  Returns the total number of subscribers.
+  """
+  @spec handler_count :: non_neg_integer()
+  defdelegate handler_count, to: Dawdle.Client
+
+  @doc """
+  Returns the number of subscribers to a specific event.
+  """
+  @spec handler_count(event()) :: non_neg_integer()
+  defdelegate handler_count(event), to: Dawdle.Client
 end

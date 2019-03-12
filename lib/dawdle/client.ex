@@ -1,14 +1,14 @@
 defmodule Dawdle.Client do
-  @moduledoc """
-  Manages subscriptions and polling of the event queues.
+  # Manages handler registration and polling of the event queues.
 
-  Note that it is better to use the API provided by the `Dawdle` and
-  `Dawdle.Handler` modules than the lower-level API described here.
-  """
+  @moduledoc false
 
   defmodule State do
     @moduledoc false
-    defstruct [:subscribers, :backend]
+    defstruct [
+      handlers: [],
+      backend: nil
+    ]
   end
 
   use GenServer
@@ -19,84 +19,34 @@ defmodule Dawdle.Client do
 
   require Logger
 
-  @doc """
-  Signals an event.
+  # These functions are delegated to here from the `Dawdle` module.
+  # Their types and definitions are defined there.
 
-  The event data is encoded and enqueued. It will then be dequeued and passed
-  to an event handler on a node with the listener running.
-  """
-  @spec signal(Dawdle.event()) :: :ok | {:error, term()}
-  def signal(event) do
-    GenServer.call(__MODULE__, {:signal, event})
+  def signal(event, opts \\ []) do
+    GenServer.call(__MODULE__, {:signal, event, opts})
   end
 
-  @doc """
-  Signals an event with a delay.
-
-  See `signal/1`.
-  """
-  @spec signal(Dawdle.event(), Dawdle.duration()) :: :ok | {:error, term()}
-  def signal(event, delay) do
-    GenServer.call(__MODULE__, {:signal, event, delay})
+  def register_handler(handler, options \\ []) do
+    GenServer.call(__MODULE__, {:register_handler, handler, options})
   end
 
-  @doc """
-  Subscribes to an event.
-
-  After calling this function, the next time the specified event occurs, then
-  the handler function will be called with data from that event.
-
-  The return value is used to unsubscribe.
-  """
-  @spec subscribe(Dawdle.event(), Dawdle.handler()) :: {:ok, reference()}
-  def subscribe(event, fun) do
-    GenServer.call(__MODULE__, {:subscribe, event, fun})
+  def unregister_handler(handler) do
+    GenServer.call(__MODULE__, {:unregister_handler, handler})
   end
 
-  @doc """
-  Unsubscribes from an event.
-
-  The `ref` parameter is taken from the return value of `subscribe/2`.
-  """
-  @spec unsubscribe(reference()) :: :ok
-  def unsubscribe(ref) do
-    GenServer.call(__MODULE__, {:unsubscribe, ref})
+  def handler_count do
+    GenServer.call(__MODULE__, :handler_count)
   end
 
-  @doc """
-  Returns the total number of subscribers.
-  """
-  @spec subscriber_count :: non_neg_integer()
-  def subscriber_count do
-    GenServer.call(__MODULE__, :subscriber_count)
+  def handler_count(event) do
+    GenServer.call(__MODULE__, {:handler_count, event})
   end
 
-  @doc """
-  Returns the number of subscribers to a specific event.
-  """
-  @spec subscriber_count(Dawdle.event()) :: non_neg_integer()
-  def subscriber_count(event) do
-    GenServer.call(__MODULE__, {:subscriber_count, event})
-  end
-
-  # These functions are used for testing and not considered part of the API.
-  # Their use in a production application is dangerous.
-
+  # This function is used for testing and not considered part of the API.
+  # Its use in a production application is dangerous.
   @doc false
-  def clear_all_subscriptions do
-    GenServer.call(__MODULE__, :clear_all_subscriptions)
-  end
-
-  @doc false
-  def stop_listeners do
-    PollerSup
-    |> Supervisor.which_children()
-    |> Enum.each(fn {id, _, _, _} ->
-      Supervisor.terminate_child(PollerSup, id)
-      Supervisor.delete_child(PollerSup, id)
-    end)
-
-    :ok
+  def clear_all_handlers do
+    GenServer.call(__MODULE__, :clear_all_handlers)
   end
 
   # This function is called by the poller when new events are ready
@@ -111,7 +61,7 @@ defmodule Dawdle.Client do
   @impl true
   def init(_) do
     backend = Backend.new()
-    state = %State{backend: backend, subscribers: %{}}
+    state = %State{backend: backend, handlers: []}
 
     {:ok, state, {:continue, true}}
   end
@@ -128,9 +78,8 @@ defmodule Dawdle.Client do
 
   defp auto_register_handlers do
     for {mod, _} <- :code.all_loaded() do
-      mod.module_info(:attributes)
-      |> Keyword.get(:behaviour, [])
-      |> Enum.member?(Dawdle.Handler)
+      mod
+      |> handler?()
       |> maybe_register_handler(mod)
     end
   end
@@ -145,81 +94,86 @@ defmodule Dawdle.Client do
   end
 
   @impl true
-  def handle_call({:signal, event}, _from, state) do
+  def handle_call({:signal, event, opts}, _from, state) do
     message = MessageEncoder.encode(event)
+    delay = Keyword.get(opts, :delay, 0)
 
-    result = state.backend.send([message])
+    result =
+      if delay == 0 do
+        state.backend.send([message])
+      else
+        state.backend.send_after(message, delay)
+      end
 
     {:reply, result, state}
   end
 
-  @impl true
-  def handle_call({:signal, event, delay}, _from, state) do
-    message = MessageEncoder.encode(event)
+  def handle_call({:register_handler, handler, options}, _from, state) do
+    if handler?(handler) do
+      options = Keyword.take(options, [:only, :except])
+      handlers = List.keystore(state.handlers, handler, 0, {handler, options})
 
-    result = state.backend.send_after(message, delay)
-
-    {:reply, result, state}
+      {:reply, :ok, %State{state | handlers: handlers}}
+    else
+      {:reply, {:error, :module_not_handler}, state}
+    end
   end
 
-  @impl true
-  def handle_call({:subscribe, object, fun}, _from, state) do
-    current = Map.get(state.subscribers, object, MapSet.new())
-    ref = make_ref()
+  def handle_call({:unregister_handler, handler}, _from, state) do
+    handlers = List.keydelete(state.handlers, handler, 0)
 
-    new_subscribers =
-      Map.put(state.subscribers, object, MapSet.put(current, {fun, ref}))
-
-    {:reply, {:ok, ref}, %State{state | subscribers: new_subscribers}}
+    {:reply, :ok, %State{state | handlers: handlers}}
   end
 
-  @impl true
-  def handle_call({:unsubscribe, ref}, _from, state) do
-    new_subscribers =
-      state.subscribers
-      |> Enum.map(&delete_ref(&1, ref))
-      |> Map.new()
-
-    {:reply, :ok, %State{state | subscribers: new_subscribers}}
+  def handle_call(:handler_count, _from, state) do
+    {:reply, Enum.count(state.handlers), state}
   end
 
-  @impl true
-  def handle_call(:subscriber_count, _from, state) do
+  def handle_call({:handler_count, object}, _from, state) do
     count =
-      Enum.reduce(state.subscribers, 0, fn {_, x}, acc ->
-        MapSet.size(x) + acc
-      end)
+      state.handlers
+      |> Enum.filter(fn {_, options} -> should_call_handler?(options, object) end)
+      |> Enum.count()
 
     {:reply, count, state}
   end
 
-  @impl true
-  def handle_call({:subscriber_count, object}, _from, state) do
-    subscribers = Map.get(state.subscribers, object, MapSet.new())
-
-    {:reply, MapSet.size(subscribers), state}
+  def handle_call(:clear_all_handlers, _from, state) do
+    {:reply, :ok, %State{state | handlers: []}}
   end
 
-  @impl true
-  def handle_call(:clear_all_subscriptions, _from, state) do
-    {:reply, :ok, %State{state | subscribers: %{}}}
+  defp handler?(mod) do
+    mod.module_info(:attributes)
+    |> Keyword.get(:behaviour, [])
+    |> Enum.member?(Dawdle.Handler)
+  rescue
+    _ -> false
   end
 
   defp forward_event(message, state) do
     %object{} = event = MessageEncoder.decode(message)
 
-    state.subscribers
-    |> Map.get(object, [])
-    |> Enum.each(fn {fun, _ref} -> call_handler(fun, event) end)
+    Enum.each(state.handlers, &maybe_call_handler(&1, object, event))
   end
 
-  defp call_handler(fun, event) do
-    Task.start(__MODULE__, :do_call_handler, [fun, event])
+  defp maybe_call_handler({handler, options}, object, event) do
+    if should_call_handler?(options, object) do
+      Task.start(__MODULE__, :do_call_handler, [handler, event])
+    end
+  end
+
+  defp should_call_handler?([], _), do: true
+
+  defp should_call_handler?(options, object) do
+    except = Keyword.get(options, :except, [])
+    only = Keyword.get(options, :only, [])
+
+    !Enum.member?(except, object) && (only == [] || Enum.member?(only, object))
   end
 
   @doc false
-  def do_call_handler(fun, event) do
-    fun.(event)
+  def do_call_handler(handler, event) do
+    handler.handle_event(event)
   rescue
     error ->
       Logger.error("""
@@ -227,12 +181,7 @@ defmodule Dawdle.Client do
         Event: #{inspect(event)}
         Error: #{inspect(error)}
 
-        #{inspect(__STACKTRACE__)}
+        #{inspect(__STACKTRACE__, pretty: true)}
       """)
-  end
-
-  defp delete_ref({key, val}, ref) do
-    to_delete = Enum.find(val, fn v -> elem(v, 1) == ref end)
-    {key, MapSet.delete(val, to_delete)}
   end
 end
