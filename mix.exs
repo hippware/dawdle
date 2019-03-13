@@ -26,7 +26,16 @@ defmodule Dawdle.MixProject do
   def application do
     [
       extra_applications: [:logger],
-      mod: {Dawdle.Application, []}
+      mod: {Dawdle.Application, []},
+      env: [
+        backend: {:system, :module, "DAWDLE_BACKEND", Dawdle.Backend.Local},
+        start_listener: {:system, :boolean, "DAWDLE_START_LISTENER", true},
+        "Elixir.Dawdle.Backend.SQS": [
+          region: {:system, "DAWDLE_SQS_REGION", "us-west-2"},
+          delay_queue: {:system, "DAWDLE_SQS_DELAY_QUEUE", "dawdle-delay"},
+          message_queue: {:system, "DAWDLE_SQS_MESSAGE_QUEUE", "dawdle-messages.fifo"}
+        ]
+      ]
     ]
   end
 
