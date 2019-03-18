@@ -35,6 +35,16 @@ defmodule Dawdle do
   defdelegate signal(event, opts \\ []), to: Dawdle.Client
 
   @doc """
+  Registers all known event handlers.
+
+  Dawdle searches through all loaded modules for any that implement the
+  `Dawdle.Handler` behaviour and registers them. This is automatically called
+  when the `:dawdle` application starts.
+  """
+  @spec register_all_handlers() :: :ok
+  defdelegate register_all_handlers, to: Dawdle.Client
+
+  @doc """
   Registers an event handler.
 
   After calling this function, the next time the specified event occurs, then

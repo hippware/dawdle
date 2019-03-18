@@ -26,6 +26,10 @@ defmodule Dawdle.Client do
     GenServer.call(__MODULE__, {:signal, event, opts})
   end
 
+  def register_all_handlers do
+    GenServer.call(__MODULE__, :register_all_handlers)
+  end
+
   def register_handler(handler, options \\ []) do
     GenServer.call(__MODULE__, {:register_handler, handler, options})
   end
@@ -113,6 +117,12 @@ defmodule Dawdle.Client do
       end
 
     {:reply, result, state}
+  end
+
+  def handle_call(:register_all_handlers, _from, state) do
+    Task.start(&auto_register_handlers/0)
+
+    {:reply, :ok, state}
   end
 
   def handle_call({:register_handler, handler, options}, _from, state) do

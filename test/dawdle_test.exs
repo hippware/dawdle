@@ -1,6 +1,8 @@
 defmodule DawdleTest do
   use ExUnit.Case
 
+  import Eventually
+
   defmodule TestEvent do
     defstruct [:pid]
   end
@@ -96,6 +98,14 @@ defmodule DawdleTest do
 
       assert {:error, :module_not_handler} =
         Dawdle.register_handler(:bad)
+    end
+  end
+
+  describe "auto handler registration" do
+    test "should register all known handlers" do
+      :ok = Dawdle.register_all_handlers()
+
+      assert_eventually Dawdle.handler_count() == 5
     end
   end
 

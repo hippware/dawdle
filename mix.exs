@@ -44,6 +44,7 @@ defmodule Dawdle.MixProject do
       {:confex, "~> 3.4"},
       {:credo, "~> 1.0", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 0.5", only: [:dev, :test], runtime: false},
+      {:eventually, github: "hippware/eventually", branch: "master", only: :test},
       {:ex_aws, "~> 2.0"},
       {:ex_aws_sqs, "~> 2.0"},
       {:ex_doc, ">= 0.0.0", only: :dev},
