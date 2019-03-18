@@ -94,6 +94,13 @@ defmodule Dawdle.Client do
   end
 
   @impl true
+  def handle_call({:signal, events, _opts}, _from, state) when is_list(events) do
+    messages = Enum.map(events, &MessageEncoder.encode/1)
+    result = state.backend.send(messages)
+
+    {:reply, result, state}
+  end
+
   def handle_call({:signal, event, opts}, _from, state) do
     message = MessageEncoder.encode(event)
     delay = Keyword.get(opts, :delay, 0)

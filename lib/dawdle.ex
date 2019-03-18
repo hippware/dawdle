@@ -31,7 +31,7 @@ defmodule Dawdle do
   Dawdle.signal(%MyApp.TestEvent{foo: 1, bar: 2}, delay: 5)
   ```
   """
-  @spec signal(event(), Keyword.t()) :: :ok | {:error, term()}
+  @spec signal(event() | [event()], Keyword.t()) :: :ok | {:error, term()}
   defdelegate signal(event, opts \\ []), to: Dawdle.Client
 
   @doc """
