@@ -6,6 +6,7 @@ defmodule Dawdle.Poller do
 
   require Logger
 
+  @spec child_spec({module(), binary(), module()}) :: map()
   def child_spec({source, queue, send_to}) do
     %{
       id: name(queue),
@@ -16,11 +17,12 @@ defmodule Dawdle.Poller do
     }
   end
 
+  @spec start_link(module(), binary(), module()) :: {:ok, pid()}
   def start_link(source, queue, send_to) do
     Task.start_link(fn -> poll(source, queue, send_to) end)
   end
 
-  def poll(source, queue, send_to) do
+  defp poll(source, queue, send_to) do
     {:ok, messages} = source.recv(queue)
 
     messages
@@ -35,7 +37,8 @@ defmodule Dawdle.Poller do
     poll(source, queue, send_to)
   end
 
-  def name(queue) do
+  defp name(queue) do
+    # credo:disable-for-next-line Credo.Check.Warning.UnsafeToAtom
     Module.concat(__MODULE__, queue)
   end
 end

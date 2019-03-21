@@ -20,26 +20,34 @@ defmodule Dawdle.Client do
   # These functions are delegated to here from the `Dawdle` module.
   # Their types and definitions are defined there.
 
+  @spec signal(Dawdle.event() | [Dawdle.event()], Keyword.t()) ::
+          :ok | {:error, term()}
   def signal(event, opts \\ []) do
     GenServer.call(__MODULE__, {:signal, event, opts})
   end
 
+  @spec register_all_handlers() :: :ok
   def register_all_handlers do
     GenServer.call(__MODULE__, :register_all_handlers)
   end
 
+  @spec register_handler(Dawdle.handler(), Keyword.t()) ::
+          :ok | {:error, term()}
   def register_handler(handler, options \\ []) do
     GenServer.call(__MODULE__, {:register_handler, handler, options})
   end
 
+  @spec unregister_handler(Dawdle.handler()) :: :ok
   def unregister_handler(handler) do
     GenServer.call(__MODULE__, {:unregister_handler, handler})
   end
 
+  @spec handler_count :: non_neg_integer()
   def handler_count do
     GenServer.call(__MODULE__, :handler_count)
   end
 
+  @spec handler_count(Dawdle.event()) :: non_neg_integer()
   def handler_count(event) do
     GenServer.call(__MODULE__, {:handler_count, event})
   end
@@ -47,17 +55,20 @@ defmodule Dawdle.Client do
   # This function is used for testing and not considered part of the API.
   # Its use in a production application is dangerous.
   @doc false
+  @spec clear_all_handlers :: :ok
   def clear_all_handlers do
     GenServer.call(__MODULE__, :clear_all_handlers)
   end
 
   # This function is called by the poller when new events are ready
   @doc false
+  @spec recv([binary()]) :: :ok
   def recv(events), do: GenServer.cast(__MODULE__, {:recv, events})
 
   # GenServer implementation
 
   @doc false
+  @spec start_link(any()) :: GenServer.on_start()
   def start_link(_), do: GenServer.start_link(__MODULE__, nil, name: __MODULE__)
 
   @impl true
@@ -176,7 +187,7 @@ defmodule Dawdle.Client do
 
   defp maybe_call_handler({handler, options}, object, event) do
     if should_call_handler?(options, object) do
-      Task.start(__MODULE__, :do_call_handler, [handler, event])
+      Task.start(fn -> do_call_handler(handler, event) end)
     end
   end
 
@@ -189,8 +200,7 @@ defmodule Dawdle.Client do
     !Enum.member?(except, object) && (only == [] || Enum.member?(only, object))
   end
 
-  @doc false
-  def do_call_handler(handler, event) do
+  defp do_call_handler(handler, event) do
     handler.handle_event(event)
   rescue
     error ->

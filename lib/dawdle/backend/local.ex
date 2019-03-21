@@ -11,19 +11,19 @@ defmodule Dawdle.Backend.Local do
 
   @behaviour Dawdle.Backend
 
-  @impl Dawdle.Backend
+  @impl true
   def init do
     {:ok, _} = GenServer.start_link(__MODULE__, [], name: __MODULE__)
     :ok
   end
 
-  @impl Dawdle.Backend
+  @impl true
   def queues, do: ["local"]
 
-  @impl Dawdle.Backend
+  @impl true
   def send(messages), do: GenServer.cast(__MODULE__, {:send, messages})
 
-  @impl Dawdle.Backend
+  @impl true
   def send_after(message, delay) do
     # The SQS backend interprets the delay as seconds, whereas here we are
     # interpreting it as milliseconds. This is to allow us to test the delay
@@ -32,21 +32,21 @@ defmodule Dawdle.Backend.Local do
     :ok
   end
 
-  @impl Dawdle.Backend
+  @impl true
   def recv(_), do: GenServer.call(__MODULE__, :recv, :infinity)
 
-  @impl Dawdle.Backend
+  @impl true
   def delete(_, _), do: :ok
 
-  @impl Dawdle.Backend
+  @impl true
   def flush, do: GenServer.call(__MODULE__, :flush)
 
-  @impl GenServer
+  @impl true
   def init(_) do
     {:ok, {[], []}}
   end
 
-  @impl GenServer
+  @impl true
   def handle_cast({:send, messages}, {[], [waiter | rest]}) do
     GenServer.reply(waiter, {:ok, transform_messages(messages)})
     {:noreply, {[], rest}}
@@ -56,7 +56,7 @@ defmodule Dawdle.Backend.Local do
     {:noreply, {queue ++ transform_messages(messages), []}}
   end
 
-  @impl GenServer
+  @impl true
   def handle_call(:recv, from, {[], waiters}) do
     {:noreply, {[], [from | waiters]}}
   end

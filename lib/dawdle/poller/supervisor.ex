@@ -5,6 +5,7 @@ defmodule Dawdle.Poller.Supervisor do
 
   alias Dawdle.Poller
 
+  @spec start_link(any()) :: Supervisor.on_start()
   def start_link(init_arg) do
     Supervisor.start_link(__MODULE__, init_arg, name: __MODULE__)
   end
@@ -14,10 +15,13 @@ defmodule Dawdle.Poller.Supervisor do
     Supervisor.init([], strategy: :one_for_one)
   end
 
+  @spec start_pollers(module(), module()) :: :ok
   def start_pollers(backend, send_to) do
     Enum.each(backend.queues(), &start_poller(backend, &1, send_to))
   end
 
+  @spec start_poller(module(), binary(), module()) ::
+          Supervisor.on_start_child()
   def start_poller(source, queue, send_to) do
     {:ok, _} =
       Supervisor.start_child(__MODULE__, {Poller, {source, queue, send_to}})

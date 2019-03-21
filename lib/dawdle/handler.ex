@@ -47,15 +47,17 @@ defmodule Dawdle.Handler do
     quote do
       @behaviour Dawdle.Handler
 
+      @spec register :: :ok | {:error, term()}
       def register do
         Dawdle.register_handler(__MODULE__, unquote(opts))
       end
 
+      @spec unregister :: :ok
       def unregister do
         Dawdle.unregister_handler(__MODULE__)
       end
 
-      @impl Dawdle.Handler
+      @impl true
       def handle_event(_event) do
         raise UndefinedFunctionError,
               "#{inspect(__MODULE__)} handle_event/1 not defined"

@@ -23,23 +23,10 @@ defmodule Dawdle.MixProject do
       dialyzer: [
         flags: [
           :error_handling,
-          :no_behaviours,
-          :no_contracts,
-          :no_fail_call,
-          :no_fun_app,
-          :no_improper_lists,
-          :no_match,
-          :no_missing_calls,
-          :no_opaque,
-          :no_return,
-          :no_undefined_callbacks,
-          :no_unused,
           :race_conditions,
           :underspecs,
           :unknown,
-          :unmatched_returns,
-          :overspecs,
-          :specdiffs
+          :unmatched_returns
         ],
         ignore_warnings: "dialyzer_ignore.exs",
         list_unused_filters: true

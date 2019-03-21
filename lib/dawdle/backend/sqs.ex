@@ -89,9 +89,12 @@ defmodule Dawdle.Backend.SQS do
         recv(queue)
 
       {:ok, %{body: %{messages: messages}}} ->
-        :ok = Logger.info(
-          "Received messages from '#{queue}': #{inspect(messages, pretty: true)}"
-        )
+        :ok =
+          Logger.info(
+            "Received messages from '#{queue}': #{
+              inspect(messages, pretty: true)
+            }"
+          )
 
         {:ok, messages}
     end
