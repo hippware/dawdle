@@ -19,6 +19,30 @@ defmodule Dawdle.MixProject do
         coveralls: :test,
         "coveralls.detail": :test,
         "coveralls.html": :test
+      ],
+      dialyzer: [
+        flags: [
+          :error_handling,
+          :no_behaviours,
+          :no_contracts,
+          :no_fail_call,
+          :no_fun_app,
+          :no_improper_lists,
+          :no_match,
+          :no_missing_calls,
+          :no_opaque,
+          :no_return,
+          :no_undefined_callbacks,
+          :no_unused,
+          :race_conditions,
+          :underspecs,
+          :unknown,
+          :unmatched_returns,
+          :overspecs,
+          :specdiffs
+        ],
+        ignore_warnings: "dialyzer_ignore.exs",
+        list_unused_filters: true
       ]
     ]
   end
@@ -33,7 +57,8 @@ defmodule Dawdle.MixProject do
         "Elixir.Dawdle.Backend.SQS": [
           region: {:system, "DAWDLE_SQS_REGION", "us-west-2"},
           delay_queue: {:system, "DAWDLE_SQS_DELAY_QUEUE", "dawdle-delay"},
-          message_queue: {:system, "DAWDLE_SQS_MESSAGE_QUEUE", "dawdle-messages.fifo"}
+          message_queue:
+            {:system, "DAWDLE_SQS_MESSAGE_QUEUE", "dawdle-messages.fifo"}
         ]
       ]
     ]
@@ -42,9 +67,10 @@ defmodule Dawdle.MixProject do
   defp deps do
     [
       {:confex, "~> 3.4"},
-      {:credo, "~> 1.0", only: [:dev, :test], runtime: false},
-      {:dialyxir, "~> 0.5", only: [:dev, :test], runtime: false},
-      {:eventually, github: "hippware/eventually", branch: "master", only: :test},
+      {:credo, "~> 1.0", only: [:dev], runtime: false},
+      {:dialyxir, "~> 1.0.0-rc.4", only: [:dev], runtime: false},
+      {:eventually,
+       github: "hippware/eventually", branch: "master", only: :test},
       {:ex_aws, "~> 2.0"},
       {:ex_aws_sqs, "~> 2.0"},
       {:ex_doc, ">= 0.0.0", only: :dev},
@@ -77,7 +103,7 @@ defmodule Dawdle.MixProject do
       main: "readme",
       extras: ["README.md"],
       groups_for_modules: [
-        "API": [
+        API: [
           Dawdle,
           Dawdle.Client,
           Dawdle.Handler

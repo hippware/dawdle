@@ -13,7 +13,7 @@ defmodule Dawdle.Backend.Local do
 
   @impl Dawdle.Backend
   def init do
-    GenServer.start_link(__MODULE__, [], name: __MODULE__)
+    {:ok, _} = GenServer.start_link(__MODULE__, [], name: __MODULE__)
     :ok
   end
 

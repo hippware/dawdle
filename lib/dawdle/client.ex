@@ -5,10 +5,8 @@ defmodule Dawdle.Client do
 
   defmodule State do
     @moduledoc false
-    defstruct [
-      handlers: [],
-      backend: nil
-    ]
+    defstruct handlers: [],
+              backend: nil
   end
 
   use GenServer
@@ -73,8 +71,8 @@ defmodule Dawdle.Client do
   @impl true
   def handle_continue(_, state) do
     if Confex.get_env(:dawdle, :start_listener) do
-      PollerSup.start_pollers(state.backend, __MODULE__)
-      Task.start(&auto_register_handlers/0)
+      :ok = PollerSup.start_pollers(state.backend, __MODULE__)
+      {:ok, _} = Task.start(&auto_register_handlers/0)
     end
 
     {:noreply, state}
@@ -98,7 +96,8 @@ defmodule Dawdle.Client do
   end
 
   @impl true
-  def handle_call({:signal, events, _opts}, _from, state) when is_list(events) do
+  def handle_call({:signal, events, _opts}, _from, state)
+      when is_list(events) do
     messages = Enum.map(events, &MessageEncoder.encode/1)
     result = state.backend.send(messages)
 
@@ -120,7 +119,7 @@ defmodule Dawdle.Client do
   end
 
   def handle_call(:register_all_handlers, _from, state) do
-    Task.start(&auto_register_handlers/0)
+    {:ok, _} = Task.start(&auto_register_handlers/0)
 
     {:reply, :ok, state}
   end
@@ -149,7 +148,9 @@ defmodule Dawdle.Client do
   def handle_call({:handler_count, object}, _from, state) do
     count =
       state.handlers
-      |> Enum.filter(fn {_, options} -> should_call_handler?(options, object) end)
+      |> Enum.filter(fn {_, options} ->
+        should_call_handler?(options, object)
+      end)
       |> Enum.count()
 
     {:reply, count, state}

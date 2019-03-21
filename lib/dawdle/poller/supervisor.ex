@@ -15,10 +15,11 @@ defmodule Dawdle.Poller.Supervisor do
   end
 
   def start_pollers(backend, send_to) do
-    Enum.map(backend.queues(), &start_poller(backend, &1, send_to))
+    Enum.each(backend.queues(), &start_poller(backend, &1, send_to))
   end
 
   def start_poller(source, queue, send_to) do
-    Supervisor.start_child(__MODULE__, {Poller, {source, queue, send_to}})
+    {:ok, _} =
+      Supervisor.start_child(__MODULE__, {Poller, {source, queue, send_to}})
   end
 end

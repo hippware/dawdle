@@ -24,7 +24,7 @@ defmodule Dawdle.Backend do
   Looks up the preferred backend in the application environment and calls the
   backend's `c:init/0` callback.
   """
-  @spec new() :: Module
+  @spec new() :: atom()
   def new do
     backend = Confex.get_env(:dawdle, :backend)
 
