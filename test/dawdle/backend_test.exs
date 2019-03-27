@@ -7,6 +7,7 @@ defmodule Dawdle.BackendTest do
   # run against SQS.
 
   alias Dawdle.Backend
+  alias Faker.Lorem
 
   setup_all do
     Application.stop(:dawdle)
@@ -16,8 +17,6 @@ defmodule Dawdle.BackendTest do
 
   setup do
     backend = Backend.new()
-
-    backend.flush()
 
     # This is cheating a little bit to get the queue names
     message_queue = hd(backend.queues())
@@ -30,26 +29,36 @@ defmodule Dawdle.BackendTest do
   end
 
   test "basic send and receive", %{backend: backend, message_queue: q} do
-    message = "this is a test"
+    message = Lorem.sentence()
 
     assert :ok = backend.send([message])
-    assert {:ok, [%{body: message}] = msgs} = backend.recv(q)
-    assert :ok = backend.delete(q, msgs)
-  end
-
-  test "send multiple messages", %{backend: backend, message_queue: q} do
-    assert :ok = backend.send(["multi test 1", "multi test 2"])
     assert {:ok, messages} = backend.recv(q)
     assert :ok = backend.delete(q, messages)
 
-    assert length(messages) == 2
+    assert Enum.any?(messages, fn %{body: msg} -> msg == message end)
+  end
+
+  test "send multiple messages", %{backend: backend, message_queue: q} do
+    message1 = Lorem.sentence()
+    message2 = Lorem.sentence()
+
+    assert :ok = backend.send([message1, message2])
+    assert {:ok, messages} = backend.recv(q)
+    assert :ok = backend.delete(q, messages)
+
+    assert length(messages) >= 2
+
+    assert Enum.any?(messages, fn %{body: msg} -> msg == message1 end)
+    assert Enum.any?(messages, fn %{body: msg} -> msg == message2 end)
   end
 
   test "send delayed message", %{backend: backend, delay_queue: q} do
-    message = "this is a delayed test"
+    message = Lorem.sentence()
 
     assert :ok = backend.send_after(message, 1)
-    assert {:ok, [%{body: message}] = msgs} = backend.recv(q)
-    assert :ok = backend.delete(q, msgs)
+    assert {:ok, messages} = backend.recv(q)
+    assert :ok = backend.delete(q, messages)
+
+    assert Enum.any?(messages, fn %{body: msg} -> msg == message end)
   end
 end
