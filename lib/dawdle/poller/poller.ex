@@ -32,7 +32,10 @@ defmodule Dawdle.Poller do
     source.delete(queue, messages)
   rescue
     exception ->
-      Logger.error("Dawdle poller crash: #{inspect(exception)}")
+      Logger.error("""
+      Dawdle poller crash: #{inspect(exception)}
+        #{inspect(__STACKTRACE__, pretty: true)}
+      """)
   after
     poll(source, queue, send_to)
   end
