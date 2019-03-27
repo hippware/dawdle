@@ -24,30 +24,36 @@ defmodule Dawdle.Backend.SQS do
         message_group_id: @group_id,
         message_deduplication_id: id()
       )
-      |> send_request()
+      |> ExAws.request(aws_config())
 
-    :ok =
-      Logger.info(
-        "Sent message to #{message_queue()} with result '#{inspect(result)}': " <>
-          "#{inspect(message, pretty: true)}"
-      )
+    _ =
+      Logger.info(fn ->
+        """
+        Sent message to #{message_queue()}:
+          message: #{inspect(message, pretty: true)}"
+          result: #{inspect(result, pretty: true)}
+        """
+      end)
 
-    result
+    normalize(result)
   end
 
   def send(messages) do
     result =
       message_queue()
       |> SQS.send_message_batch(batchify(messages))
-      |> send_request()
+      |> ExAws.request(aws_config())
 
-    :ok =
-      Logger.info(
-        "Sent #{length(messages)} messages to #{message_queue()} with result " <>
-          "'#{inspect(result)}': #{inspect(messages, pretty: true)}"
-      )
+    _ =
+      Logger.info(fn ->
+        """
+        Sent #{length(messages)} messages to #{message_queue()}:
+          messages: #{inspect(messages, pretty: true)}"
+          result: #{inspect(result, pretty: true)}
+        """
+      end)
 
-    result
+    normalize(result)
   end
 
   @impl true
@@ -55,21 +61,18 @@ defmodule Dawdle.Backend.SQS do
     result =
       delay_queue()
       |> SQS.send_message(message, delay_seconds: delay)
-      |> send_request()
+      |> ExAws.request(aws_config())
 
-    :ok =
-      Logger.info(
-        "Sent delayed message to #{delay_queue()} with result " <>
-          "'#{inspect(result)}': #{inspect(message, pretty: true)}"
-      )
+    _ =
+      Logger.info(fn ->
+        """
+        Sent message to #{delay_queue()} with delay of #{delay}:
+          message: #{inspect(message, pretty: true)}
+          result: #{inspect(result, pretty: true)}
+        """
+      end)
 
-    result
-  end
-
-  defp send_request(request) do
-    with {:ok, _} <- ExAws.request(request, aws_config()) do
-      :ok
-    end
+    normalize(result)
   end
 
   @impl true
@@ -79,22 +82,18 @@ defmodule Dawdle.Backend.SQS do
       |> SQS.receive_message(max_number_of_messages: 10)
       |> ExAws.request(aws_config())
 
-    :ok =
-      Logger.debug(fn ->
-        "Receive results from queue #{queue}: #{inspect(result, pretty: true)}"
-      end)
-
     case result do
       {:ok, %{body: %{messages: []}}} ->
+        _ = Logger.debug(fn -> "Empty receive from '#{queue}'" end)
+
         recv(queue)
 
       {:ok, %{body: %{messages: messages}}} ->
-        :ok =
-          Logger.info(
-            "Received messages from '#{queue}': #{
-              inspect(messages, pretty: true)
-            }"
-          )
+        _ =
+          Logger.info(fn ->
+            "Received messages from '#{queue}': " <>
+              "#{inspect(messages, pretty: true)}"
+          end)
 
         {:ok, messages}
     end
@@ -107,14 +106,21 @@ defmodule Dawdle.Backend.SQS do
         {%{id: Integer.to_string(id), receipt_handle: m.receipt_handle}, id + 1}
       end)
 
-    :ok =
-      Logger.info(
-        "Deleted messages from '#{queue}': #{inspect(messages, pretty: true)}"
-      )
+    result =
+      queue
+      |> SQS.delete_message_batch(del_list)
+      |> ExAws.request(aws_config())
 
-    queue
-    |> SQS.delete_message_batch(del_list)
-    |> send_request()
+    _ =
+      Logger.info(fn ->
+        """
+        Deleted messages from '#{queue}':
+          messages: #{inspect(messages, pretty: true)}"
+          result: #{inspect(result, pretty: true)}
+        """
+      end)
+
+    normalize(result)
   end
 
   defp message_queue, do: config(:message_queue)
@@ -124,8 +130,7 @@ defmodule Dawdle.Backend.SQS do
   defp aws_config, do: [region: config(:region)]
 
   defp config(term) do
-    :dawdle
-    |> Confex.fetch_env!(__MODULE__)
+    Confex.fetch_env!(:dawdle, __MODULE__)
     |> Keyword.get(term)
   end
 
@@ -146,4 +151,7 @@ defmodule Dawdle.Backend.SQS do
       ]
     end)
   end
+
+  defp normalize({:ok, _}), do: :ok
+  defp normalize(result), do: result
 end
