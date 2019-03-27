@@ -143,9 +143,8 @@ defmodule Dawdle.Backend.SQS do
   end
 
   defp id do
-    [:monotonic]
-    |> :erlang.unique_integer()
-    |> Integer.to_string()
+    :crypto.strong_rand_bytes(16)
+    |> Base.hex_encode32(padding: false)
   end
 
   defp batchify(messages) do
