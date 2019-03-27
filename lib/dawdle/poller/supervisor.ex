@@ -23,7 +23,9 @@ defmodule Dawdle.Poller.Supervisor do
   @spec start_poller(module(), binary(), module()) ::
           Supervisor.on_start_child()
   def start_poller(source, queue, send_to) do
-    {:ok, _} =
-      Supervisor.start_child(__MODULE__, {Poller, {source, queue, send_to}})
+    case Supervisor.start_child(__MODULE__, {Poller, {source, queue, send_to}}) do
+      {:ok, _} -> :ok
+      {:error, {:already_started, _}} -> :ok
+    end
   end
 end
