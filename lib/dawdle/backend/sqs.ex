@@ -117,19 +117,6 @@ defmodule Dawdle.Backend.SQS do
     |> send_request()
   end
 
-  @impl true
-  def flush do
-    Enum.each(queues(), &do_flush(&1))
-  end
-
-  defp do_flush(queue) do
-    :ok = Logger.debug(fn -> "Purging queue '#{queue}'" end)
-
-    queue
-    |> SQS.purge_queue()
-    |> ExAws.request(aws_config())
-  end
-
   defp message_queue, do: config(:message_queue)
 
   defp delay_queue, do: config(:delay_queue)

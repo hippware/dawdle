@@ -39,9 +39,6 @@ defmodule Dawdle.Backend.Local do
   def delete(_, _), do: :ok
 
   @impl true
-  def flush, do: GenServer.call(__MODULE__, :flush)
-
-  @impl true
   def init(_) do
     {:ok, {[], []}}
   end
@@ -63,10 +60,6 @@ defmodule Dawdle.Backend.Local do
 
   def handle_call(:recv, _from, {messages, []}) do
     {:reply, {:ok, messages}, {[], []}}
-  end
-
-  def handle_call(:flush, _from, _) do
-    {:reply, :ok, {[], []}}
   end
 
   defp transform_messages(messages) do
