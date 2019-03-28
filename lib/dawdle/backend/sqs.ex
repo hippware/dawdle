@@ -48,7 +48,7 @@ defmodule Dawdle.Backend.SQS do
       Logger.info(fn ->
         """
         Sent #{length(messages)} messages to #{message_queue()}:
-          messages: #{inspect(messages, pretty: true)}"
+          messages: #{inspect(messages, pretty: true)}
           result: #{inspect(result, pretty: true)}
         """
       end)
