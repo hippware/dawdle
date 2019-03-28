@@ -70,4 +70,18 @@ defmodule Dawdle do
   """
   @spec handler_count(event()) :: non_neg_integer()
   defdelegate handler_count(event), to: Dawdle.Client
+
+  @doc """
+  Starts the pollers if they were not started automatically at application
+  startup.
+  """
+  @spec start_pollers :: :ok
+  defdelegate start_pollers, to: Dawdle.Client
+
+
+  @doc """
+  Stops any running pollers.
+  """
+  @spec stop_pollers :: :ok
+  defdelegate stop_pollers, to: Dawdle.Client
 end

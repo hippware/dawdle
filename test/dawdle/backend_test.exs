@@ -10,9 +10,7 @@ defmodule Dawdle.BackendTest do
   alias Faker.Lorem
 
   setup_all do
-    Application.stop(:dawdle)
-
-    on_exit fn -> Application.start(:dawdle) end
+    Dawdle.stop_pollers()
   end
 
   setup do

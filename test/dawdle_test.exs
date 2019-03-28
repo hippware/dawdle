@@ -52,6 +52,10 @@ defmodule DawdleTest do
     def handle_event(_), do: :ok
   end
 
+  setup_all do
+    Dawdle.start_pollers()
+  end
+
   setup do
     Dawdle.Client.clear_all_handlers()
 

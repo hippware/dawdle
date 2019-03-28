@@ -40,7 +40,7 @@ defmodule Dawdle.MixProject do
       mod: {Dawdle.Application, []},
       env: [
         backend: {:system, :module, "DAWDLE_BACKEND", Dawdle.Backend.Local},
-        start_listener: {:system, :boolean, "DAWDLE_START_LISTENER", true},
+        start_pollers: {:system, :boolean, "DAWDLE_START_POLLERS", false},
         "Elixir.Dawdle.Backend.SQS": [
           region: {:system, "DAWDLE_SQS_REGION", "us-west-2"},
           delay_queue: {:system, "DAWDLE_SQS_DELAY_QUEUE", "dawdle-delay"},

@@ -13,8 +13,12 @@ defmodule Dawdle.Backend.Local do
 
   @impl true
   def init do
-    {:ok, _} = GenServer.start_link(__MODULE__, [], name: __MODULE__)
-    :ok
+    case GenServer.start_link(__MODULE__, [], name: __MODULE__) do
+      {:ok, _} -> :ok
+      {:error, {:already_started, _}} -> :ok
+    end
+
+    GenServer.call(__MODULE__, :flush)
   end
 
   @impl true
@@ -60,6 +64,10 @@ defmodule Dawdle.Backend.Local do
 
   def handle_call(:recv, _from, {messages, []}) do
     {:reply, {:ok, messages}, {[], []}}
+  end
+
+  def handle_call(:flush, _from, _) do
+    {:reply, :ok, {[], []}}
   end
 
   defp transform_messages(messages) do

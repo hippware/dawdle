@@ -52,6 +52,16 @@ defmodule Dawdle.Client do
     GenServer.call(__MODULE__, {:handler_count, event})
   end
 
+  @spec start_pollers :: :ok
+  def start_pollers do
+    GenServer.call(__MODULE__, :start_pollers)
+  end
+
+  @spec stop_pollers :: :ok
+  def stop_pollers do
+    GenServer.call(__MODULE__, :stop_pollers)
+  end
+
   # This function is used for testing and not considered part of the API.
   # Its use in a production application is dangerous.
   @doc false
@@ -81,10 +91,9 @@ defmodule Dawdle.Client do
 
   @impl true
   def handle_continue(_, state) do
-    if Confex.get_env(:dawdle, :start_listener) do
-      :ok = PollerSup.start_pollers(state.backend, __MODULE__)
-      {:ok, _} = Task.start(&auto_register_handlers/0)
-    end
+    _ =
+      if Confex.get_env(:dawdle, :start_pollers),
+        do: do_start_pollers(state.backend)
 
     {:noreply, state}
   end
@@ -167,8 +176,25 @@ defmodule Dawdle.Client do
     {:reply, count, state}
   end
 
+  def handle_call(:start_pollers, _from, state) do
+    _ = do_start_pollers(state.backend)
+
+    {:reply, :ok, state}
+  end
+
+  def handle_call(:stop_pollers, _from, state) do
+    PollerSup.stop_pollers()
+
+    {:reply, :ok, state}
+  end
+
   def handle_call(:clear_all_handlers, _from, state) do
     {:reply, :ok, %State{state | handlers: []}}
+  end
+
+  defp do_start_pollers(backend) do
+    :ok = PollerSup.start_pollers(backend, __MODULE__)
+    {:ok, _} = Task.start(&auto_register_handlers/0)
   end
 
   defp handler?(mod) do

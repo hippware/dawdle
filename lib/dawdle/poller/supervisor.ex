@@ -20,12 +20,22 @@ defmodule Dawdle.Poller.Supervisor do
     Enum.each(backend.queues(), &start_poller(backend, &1, send_to))
   end
 
-  @spec start_poller(module(), binary(), module()) ::
-          Supervisor.on_start_child()
-  def start_poller(source, queue, send_to) do
+  defp start_poller(source, queue, send_to) do
     case Supervisor.start_child(__MODULE__, {Poller, {source, queue, send_to}}) do
       {:ok, _} -> :ok
       {:error, {:already_started, _}} -> :ok
     end
+  end
+
+  @spec stop_pollers() :: :ok
+  def stop_pollers do
+    __MODULE__
+    |> Supervisor.which_children()
+    |> Enum.each(fn {id, _, _, _} -> stop_poller(id) end)
+  end
+
+  defp stop_poller(poller) do
+    :ok = Supervisor.terminate_child(__MODULE__, poller)
+    :ok = Supervisor.delete_child(__MODULE__, poller)
   end
 end
