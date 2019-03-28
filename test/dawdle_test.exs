@@ -2,6 +2,7 @@
 defmodule DawdleTest do
   use ExUnit.Case
 
+  import Dawdle.TestHelper
   import Eventually
 
   defmodule TestEvent do
@@ -57,7 +58,7 @@ defmodule DawdleTest do
   end
 
   setup do
-    Dawdle.Client.clear_all_handlers()
+    clear_all_handlers()
 
     :ok = TestHandler.register()
 
