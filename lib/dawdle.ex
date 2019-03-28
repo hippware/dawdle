@@ -78,7 +78,6 @@ defmodule Dawdle do
   @spec start_pollers :: :ok
   defdelegate start_pollers, to: Dawdle.Client
 
-
   @doc """
   Stops any running pollers.
   """
