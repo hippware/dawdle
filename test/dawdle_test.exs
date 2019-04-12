@@ -1,9 +1,13 @@
 # credo:disable-for-this-file Credo.Check.Readability.Specs
 defmodule DawdleTest do
-  use ExUnit.Case
+  use ExUnit.Case, async: false
 
   import Dawdle.TestHelper
   import Eventually
+
+  alias Dawdle.Delay.Handler, as: DelayHandler
+
+  doctest Dawdle
 
   defmodule TestEvent do
     defstruct [:pid]
@@ -19,6 +23,8 @@ defmodule DawdleTest do
     use Dawdle.Handler
 
     def handle_event(%TestEvent{pid: pid}), do: send(pid, :handled)
+
+    def handle_event(_), do: :ok
   end
 
   defmodule TestRehandler do
@@ -27,6 +33,8 @@ defmodule DawdleTest do
     use Dawdle.Handler
 
     def handle_event(%TestEvent{pid: pid}), do: send(pid, :rehandled)
+
+    def handle_event(_), do: :ok
   end
 
   defmodule CrashyTestHandler do
@@ -55,6 +63,8 @@ defmodule DawdleTest do
 
   setup_all do
     Dawdle.start_pollers()
+
+    DelayHandler.register()
   end
 
   setup do
@@ -111,7 +121,7 @@ defmodule DawdleTest do
     test "should register all known handlers" do
       :ok = Dawdle.register_all_handlers()
 
-      assert_eventually Dawdle.handler_count() == 5
+      assert_eventually Dawdle.handler_count() == 6
     end
   end
 

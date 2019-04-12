@@ -1,5 +1,5 @@
 defmodule Dawdle.BackendTest do
-  use ExUnit.Case
+  use ExUnit.Case, async: false
 
   # When the test suite is run against the local backend (the default), then
   # this test serves as a sanity check that the local backend is behaving as

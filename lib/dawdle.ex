@@ -3,6 +3,8 @@ defmodule Dawdle do
   API for the Dawdle messaging system.
   """
 
+  @type argument :: any()
+  @type callback :: (argument() -> any())
   @type duration :: non_neg_integer()
   @type event :: struct()
   @type handler :: module()
@@ -83,4 +85,84 @@ defmodule Dawdle do
   """
   @spec stop_pollers :: :ok
   defdelegate stop_pollers, to: Dawdle.Client
+
+  # Experimental API
+  # This may be extracted into a separate library in the future
+
+  @doc """
+  Send a function to be executed.
+
+  Note that this is an experimental API.
+
+  The function is encoded and enqueued and will be executed on a node running
+  the Dawdle listener. Even if the listener is running on the current node,
+  the function may still be executed on another node.
+
+  The passed function is evaluated for its side effects and any return value
+  is ignored.
+
+  Returns `:ok` when the function is successfully enqueued. Otherwise, returns
+  an error tuple.
+
+  ## Examples
+
+  ```
+  iex> Dawdle.call(fn ->
+  ...> # Do something expensive...
+  ...> :ok
+  ...> end)
+  :ok
+  ```
+  """
+  @spec call(fun()) :: :ok | {:error, term()}
+  defdelegate call(fun), to: Dawdle.Delay.Handler
+
+  @doc """
+  Send a function to be executed after a delay.
+
+  Note that this is an experimental API.
+
+  The function is encoded and enqueued and will be executed on a node running
+  the Dawdle listener after the specified delay. Even if the listener is
+  running on the current node, the function may still be executed on another
+  node.
+
+  The passed function is evaluated for its side effects and any return value
+  is ignored.
+
+  Returns `:ok` when the function is successfully enqueued. Otherwise, returns
+  an error tuple.
+
+  ## Examples
+
+  ```
+  iex> Dawdle.call_after(5, fn ->
+  ...> # Do something later...
+  ...> :ok
+  ...> end)
+  :ok
+  ```
+  """
+  @spec call_after(duration(), fun()) :: :ok | {:error, term()}
+  defdelegate call_after(delay, fun), to: Dawdle.Delay.Handler
+
+  # Old 0.4.x API (deprecated)
+
+  @doc """
+  (DEPRECATED) Set a callback to be called the eafter `delay` ms
+
+  ## Examples
+
+  ```
+  iex> Dawdle.call_after(fn _arg ->
+  ...> # Do something later...
+  ...> :ok
+  ...> end, 1, 5)
+  :ok
+  """
+  @deprecated "Use call_after/2 or signal/2 instead"
+  @spec call_after(callback(), argument(), duration()) :: :ok | {:error, term()}
+  def call_after(callback, argument, delay) do
+    call_after(delay, fn -> callback.(argument) end)
+  end
 end

@@ -139,6 +139,53 @@ Note that if you are handling events on nodes different from where they are
 signaled, then you need to ensure that the event definintions are available
 in both places.
 
+
+### Experimental API
+
+There is a basic, experimental API which involves passing a simple function to
+`Dawdle.call/1`.  The function will execute on a node running the Dawdle
+application with pollers enabled.
+
+```elixir
+iex> Dawdle.call(fn -> IO.puts("Hello World!") end)
+:ok
+Hello World!
+```
+
+Passing a function to `Dawdle.call_after/2` will result in that function being
+called after the specified delay.
+
+```elixir
+iex> Dawdle.call_after(2000, fn -> IO.puts("Hello Future!") end)
+:ok
+
+# 2 seconds later
+Hello Future!
+```
+
+This API is included for feedback and may be discontinued or extracted into a
+separate library for Dawdle 1.0.
+
+
+## 0.4.x API (DEPRECATED)
+
+Create a callback function
+```elixir
+iex> callback = fn message -> IO.inspect "Received #{message}" end
+#Function<6.99386804/1 in :erl_eval.expr/5>
+```
+
+Send your message
+```elixir
+iex(3)> Dawdle.call_after(callback, "Hello future", 2000)
+:ok
+
+# 2 seconds later
+"Received Hello future"
+```
+
+This API will be removed before Dawdle 1.0.
+
 ## Node Loss Tolerance
 
 Because the events are managed outside of your BEAM VM(s), they will be
