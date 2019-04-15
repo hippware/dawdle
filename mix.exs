@@ -29,7 +29,7 @@ defmodule Dawdle.MixProject do
       {:ex_aws, "~> 2.0"},
       {:ex_aws_sqs, "~> 2.0"},
       {:hackney, "~> 1.7"},
-      {:poison, "~> 3.1"},
+      {:poison, "~> 4.0"},
       {:sweet_xml, "~> 0.6"}
     ]
   end
