@@ -55,7 +55,7 @@ defmodule Dawdle.MixProject do
     [
       {:confex, "~> 3.4"},
       {:credo, "~> 1.0", only: [:dev], runtime: false},
-      {:dialyxir, "~> 1.0.0-rc.4", only: [:dev], runtime: false},
+      {:dialyxir, "~> 1.0.0-rc.6", only: [:dev], runtime: false},
       {:eventually, "~> 1.0", only: :test},
       {:ex_aws, "~> 2.0"},
       {:ex_aws_sqs, "~> 2.0"},
