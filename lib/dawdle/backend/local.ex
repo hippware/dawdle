@@ -1,28 +1,76 @@
 defmodule Dawdle.Backend.Local do
-  @moduledoc false
+  @moduledoc """
+  Implementation of the `Dawdle.Backend` behaviour that queues all events
+  locally on a single node.
+
+  This is intended for use in testing and development where a "live" backend
+  like SQS is not available or desirable.
+  """
 
   use GenServer
 
   @behaviour Dawdle.Backend
 
-  def start_link() do
-    GenServer.start_link(__MODULE__, nil, name: __MODULE__)
+  @impl true
+  def init do
+    case GenServer.start_link(__MODULE__, [], name: __MODULE__) do
+      {:ok, _} -> :ok
+      {:error, {:already_started, _}} -> :ok
+    end
+
+    GenServer.call(__MODULE__, :flush)
   end
 
-  def send(callback, argument, delay) do
-    GenServer.cast(__MODULE__, {:send, callback, argument, delay})
+  @impl true
+  def queues, do: ["local"]
+
+  @impl true
+  def send(messages), do: GenServer.cast(__MODULE__, {:send, messages})
+
+  @impl true
+  def send_after(message, delay) do
+    # The SQS backend interprets the delay as seconds, whereas here we are
+    # interpreting it as milliseconds. This is to allow us to test the delay
+    # feature without the tests taking forever.
+    {:ok, _} = :timer.apply_after(delay, __MODULE__, :send, [[message]])
+    :ok
   end
 
-  def init(nil) do
-    {:ok, nil}
+  @impl true
+  def recv(_), do: GenServer.call(__MODULE__, :recv, :infinity)
+
+  @impl true
+  def delete(_, _), do: :ok
+
+  @impl true
+  def init(_) do
+    {:ok, {[], []}}
   end
 
-  def handle_cast({:send, callback, argument, delay}, state) do
-    :timer.apply_after(delay, __MODULE__, :recv, [callback, argument])
-    {:noreply, state}
+  @impl true
+  def handle_cast({:send, messages}, {[], [waiter | rest]}) do
+    GenServer.reply(waiter, {:ok, transform_messages(messages)})
+    {:noreply, {[], rest}}
   end
 
-  def recv(callback, argument) do
-    callback.(argument)
+  def handle_cast({:send, messages}, {queue, []}) do
+    {:noreply, {queue ++ transform_messages(messages), []}}
+  end
+
+  @impl true
+  def handle_call(:recv, from, {[], waiters}) do
+    {:noreply, {[], [from | waiters]}}
+  end
+
+  def handle_call(:recv, _from, {messages, []}) do
+    {:reply, {:ok, messages}, {[], []}}
+  end
+
+  def handle_call(:flush, _from, _) do
+    {:reply, :ok, {[], []}}
+  end
+
+  defp transform_messages(messages) do
+    Enum.map(messages, fn m -> %{body: m} end)
   end
 end

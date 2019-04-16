@@ -1,110 +1,157 @@
 defmodule Dawdle.Backend.SQS do
-  @moduledoc false
+  @moduledoc """
+  Implementation of the `Dawdle.Backend` behaviour for Amazon SQS.
+  """
 
   alias ExAws.SQS
-  alias Dawdle.Backend.SQS.Supervisor, as: SQSSupervisor
 
-  @max_delay 15 * 60
-
-  defstruct [
-    :remaining_delay,
-    :callback,
-    :argument
-  ]
-
-  @type t :: %__MODULE__{
-          remaining_delay: Dawdle.duration(),
-          callback: Dawdle.callback(),
-          argument: Dawdle.argument()
-        }
+  require Logger
 
   @behaviour Dawdle.Backend
+  @group_id "dawdle_db"
 
-  def start_link() do
-    SQSSupervisor.start_link(config(:queues))
-  end
+  @impl true
+  def init, do: :ok
 
-  ## Outgoing handlers
-  def send(callback, argument, delay_ms) do
-    %__MODULE__{
-      remaining_delay: div(delay_ms, 1000),
-      callback: callback,
-      argument: argument
-    }
-    |> send_message()
-  end
+  @impl true
+  def queues, do: [message_queue(), delay_queue()]
 
-  defp send_message(%__MODULE__{remaining_delay: remaining_delay} = message) do
-    this_delay = min(remaining_delay, config(:max_delay, @max_delay))
-
-    body =
-      %{message | remaining_delay: remaining_delay - this_delay}
-      |> :erlang.term_to_binary()
-      |> Base.encode64()
-
-    {:ok, _} =
-      get_queue()
-      |> SQS.send_message(body, delay_seconds: this_delay)
+  @impl true
+  def send([message]) do
+    result =
+      message_queue()
+      |> SQS.send_message(message,
+        message_group_id: @group_id,
+        message_deduplication_id: id()
+      )
       |> ExAws.request(aws_config())
 
-    :ok
+    _ =
+      Logger.info(fn ->
+        """
+        Sent message to #{message_queue()}:
+          message: #{inspect(message, pretty: true)}"
+          result: #{inspect(result, pretty: true)}
+        """
+      end)
+
+    normalize(result)
   end
 
-  defp get_queue() do
-    :queues
-    |> config()
-    |> Enum.random()
+  def send(messages) do
+    result =
+      message_queue()
+      |> SQS.send_message_batch(batchify(messages))
+      |> ExAws.request(aws_config())
+
+    _ =
+      Logger.info(fn ->
+        """
+        Sent #{length(messages)} messages to #{message_queue()}:
+          messages: #{inspect(messages, pretty: true)}
+          result: #{inspect(result, pretty: true)}
+        """
+      end)
+
+    normalize(result)
   end
 
-  def aws_config, do: [region: config(:region)]
+  @impl true
+  def send_after(message, delay) do
+    result =
+      delay_queue()
+      |> SQS.send_message(message, delay_seconds: delay)
+      |> ExAws.request(aws_config())
 
-  def config(term, default \\ nil) do
-    :dawdle
-    |> Confex.fetch_env!(__MODULE__)
-    |> Keyword.get(term, default)
+    _ =
+      Logger.info(fn ->
+        """
+        Sent message to #{delay_queue()} with delay of #{delay}:
+          message: #{inspect(message, pretty: true)}
+          result: #{inspect(result, pretty: true)}
+        """
+      end)
+
+    normalize(result)
   end
 
-  ## Incoming handlers
-  def handle_messages([], _), do: :ok
+  @impl true
+  def recv(queue) do
+    result =
+      queue
+      |> SQS.receive_message(max_number_of_messages: 10)
+      |> ExAws.request(aws_config())
 
-  def handle_messages(messages, queue) do
-    # Delete before firing the callback otherwise if the callback crashes
-    # or quits (as it does in testing) the message won't be removed from the
-    # SQS queue.
-    delete(messages, queue)
-    Enum.each(messages, &decode_and_handle(&1))
-  end
+    case result do
+      {:ok, %{body: %{messages: []}}} ->
+        _ = Logger.debug(fn -> "Empty receive from '#{queue}'" end)
 
-  defp decode_and_handle(%{body: body}) do
-    try do
-      body
-      |> Base.decode64!()
-      |> :erlang.binary_to_term([:safe])
-      |> handle_message()
+        recv(queue)
 
-      :ok
-    catch
-      _ -> :ok
+      {:ok, %{body: %{messages: messages}}} ->
+        _ =
+          Logger.info(fn ->
+            "Received messages from '#{queue}': " <>
+              "#{inspect(messages, pretty: true)}"
+          end)
+
+        {:ok, messages}
     end
   end
 
-  defp handle_message(%__MODULE__{remaining_delay: remaining_delay} = message)
-       when remaining_delay > 0 do
-    send_message(message)
-  end
-
-  defp handle_message(%__MODULE__{callback: callback, argument: argument}) do
-    callback.(argument)
-  end
-
-  defp delete(messages, queue) do
+  @impl true
+  def delete(queue, messages) do
     {del_list, _} =
       Enum.map_reduce(messages, 0, fn m, id ->
         {%{id: Integer.to_string(id), receipt_handle: m.receipt_handle}, id + 1}
       end)
 
-    queue
-    |> SQS.delete_message_batch(del_list)
-    |> ExAws.request(aws_config())
+    result =
+      queue
+      |> SQS.delete_message_batch(del_list)
+      |> ExAws.request(aws_config())
+
+    _ =
+      Logger.info(fn ->
+        """
+        Deleted messages from '#{queue}':
+          messages: #{inspect(messages, pretty: true)}"
+          result: #{inspect(result, pretty: true)}
+        """
+      end)
+
+    normalize(result)
   end
+
+  defp message_queue, do: config(:message_queue)
+
+  defp delay_queue, do: config(:delay_queue)
+
+  defp aws_config, do: [region: config(:region)]
+
+  defp config(term) do
+    Confex.fetch_env!(:dawdle, __MODULE__)
+    |> Keyword.get(term)
+  end
+
+  defp id do
+    :crypto.strong_rand_bytes(16)
+    |> Base.hex_encode32(padding: false)
+  end
+
+  defp batchify(messages) do
+    Enum.map(messages, fn m ->
+      id = id()
+
+      [
+        id: id,
+        message_body: m,
+        message_deduplication_id: id,
+        message_group_id: @group_id
+      ]
+    end)
+  end
+
+  defp normalize({:ok, _}), do: :ok
+  defp normalize(result), do: result
 end

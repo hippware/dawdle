@@ -1,45 +1,188 @@
+# credo:disable-for-this-file Credo.Check.Readability.Specs
 defmodule DawdleTest do
-  use ExUnit.Case
+  use ExUnit.Case, async: false
+
+  import Dawdle.TestHelper
+  import Eventually
+
+  alias Dawdle.Delay.Handler, as: DelayHandler
+
+  doctest Dawdle
+
+  defmodule TestEvent do
+    defstruct [:pid]
+  end
+
+  defmodule TestEvent2 do
+    defstruct [:foo, :bar]
+  end
+
+  defmodule TestHandler do
+    @moduledoc false
+
+    use Dawdle.Handler
+
+    def handle_event(%TestEvent{pid: pid}), do: send(pid, :handled)
+
+    def handle_event(_), do: :ok
+  end
+
+  defmodule TestRehandler do
+    @moduledoc false
+
+    use Dawdle.Handler
+
+    def handle_event(%TestEvent{pid: pid}), do: send(pid, :rehandled)
+
+    def handle_event(_), do: :ok
+  end
+
+  defmodule CrashyTestHandler do
+    @moduledoc false
+
+    use Dawdle.Handler
+
+    def handle_event(_), do: raise RuntimeError
+  end
+
+  defmodule OnlyTestHandler do
+    @moduledoc false
+
+    use Dawdle.Handler, only: [TestEvent]
+
+    def handle_event(_), do: :ok
+  end
+
+  defmodule ExceptTestHandler do
+    @moduledoc false
+
+    use Dawdle.Handler, except: [TestEvent2]
+
+    def handle_event(_), do: :ok
+  end
 
   setup_all do
-    {:ok, _pid} = Dawdle.start_link()
+    Dawdle.start_pollers()
+
+    DelayHandler.register()
+  end
+
+  setup do
+    clear_all_handlers()
+
+    :ok = TestHandler.register()
 
     :ok
   end
 
-  @payload "0s"
-  test "set timeout with no delay" do
-    self = self()
-    Dawdle.call_after(&send(self, &1), @payload, 0)
-    assert_receive @payload, 500
+  describe "handler registration" do
+    test "should register the handler with the Client" do
+      assert Dawdle.handler_count() == 1
+    end
+
+    test "should register multiple handlers with the Client" do
+      assert :ok = TestRehandler.register()
+
+      assert Dawdle.handler_count() == 2
+    end
+
+    test "should replace handlers on duplicate registrations" do
+      assert :ok = TestHandler.register()
+
+      assert Dawdle.handler_count() == 1
+    end
+
+    test "should respect :only flag" do
+      assert :ok = OnlyTestHandler.register()
+
+      assert Dawdle.handler_count() == 2
+      assert Dawdle.handler_count(TestEvent) == 2
+      assert Dawdle.handler_count(TestEvent2) == 1
+    end
+
+    test "should respect :except flag" do
+      assert :ok = ExceptTestHandler.register()
+
+      assert Dawdle.handler_count() == 2
+      assert Dawdle.handler_count(TestEvent) == 2
+      assert Dawdle.handler_count(TestEvent2) == 1
+    end
+
+    test "should error on bad handler" do
+      assert {:error, :module_not_handler} =
+        Dawdle.register_handler(__MODULE__)
+
+      assert {:error, :module_not_handler} =
+        Dawdle.register_handler(:bad)
+    end
   end
 
-  @payload "1s"
-  test "set timeout with 1s delay" do
-    self = self()
-    Dawdle.call_after(&send(self, &1), @payload, 1_000)
-    refute_receive _, 800
-    assert_receive @payload, 400
+  describe "auto handler registration" do
+    test "should register all known handlers" do
+      :ok = Dawdle.register_all_handlers()
+
+      assert_eventually Dawdle.handler_count() == 6
+    end
   end
 
-  @intervals [1_000, 5_000, 10_000]
-  test "set 5 timeouts with various delays" do
-    self = self()
-    callback = &send(self, &1)
-    @intervals
-    |> Enum.map(&List.duplicate(&1, 5))
-    |> List.flatten()
-    |> Enum.shuffle()
-    |> Enum.each(&Dawdle.call_after(callback, &1, &1))
+  describe "handler deregistration" do
+    test "should remove the handler" do
+      assert :ok = TestHandler.unregister()
+      assert Dawdle.handler_count() == 0
+    end
 
-    Enum.each([500, 4_000, 9_000], &:erlang.send_after(&1, self(), :none))
-    Enum.each([1_200, 6_000, 11_000], &:erlang.send_after(&1, self(), :receive))
+    test "should ignore unknown handlers" do
+      assert :ok = TestRehandler.unregister()
+      assert Dawdle.handler_count() == 1
+    end
+  end
 
-    Enum.each(@intervals, fn i ->
-        assert_receive :none, 20_000
-        refute_received _
-        assert_receive :receive, 20_000
-        Enum.each(1..5, fn _ -> assert_received ^i end)
-      end)
+  describe "event signaling" do
+    test "should send event to a single handler" do
+      t = %TestEvent{pid: self()}
+
+      :ok = Dawdle.signal(t)
+
+      assert_receive :handled, 25_000
+    end
+
+    test "should send batched events to a single handler" do
+      t = %TestEvent{pid: self()}
+
+      :ok = Dawdle.signal([t, t, t])
+
+      assert_receive :handled, 25_000
+      assert_receive :handled, 25_000
+      assert_receive :handled, 25_000
+    end
+
+    test "should send event to mulitple handlers" do
+      TestRehandler.register()
+
+      t = %TestEvent{pid: self()}
+
+      :ok = Dawdle.signal(t)
+
+      assert_receive :handled, 25_000
+      assert_receive :rehandled, 25_000
+    end
+
+    test "should behave when a handler crashes" do
+      CrashyTestHandler.register()
+
+      t = %TestEvent{pid: self()}
+
+      :ok = Dawdle.signal(t)
+
+      assert_receive :handled, 25_000
+    end
+
+    test "should delay event handling" do
+      t = %TestEvent{pid: self()}
+
+      :ok = Dawdle.signal(t, delay: 1)
+
+      assert_receive :handled, 25_000
+    end
   end
 end
