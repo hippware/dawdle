@@ -214,10 +214,3 @@ in a persistent store first and send the key through Dawdle.
 SQS delays are limited to 15 minutes. We handle longer delays by using
 multiple chained messages, so factor this into any capacity calculations you're
 doing.
-
-## TODO
-
-- [ ] Add tests for Poller and MessageEncoder
-- [ ] Figure out a better way to test the SQS backend
-- [ ] Have multiple backends running at the same time and allow callers to
-specify which backends events will be dispatched via.
