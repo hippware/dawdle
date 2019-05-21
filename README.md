@@ -64,6 +64,10 @@ config :dawdle, Dawdle.Backend.SQS,
 These values can also be set by using the environment variables
 `DAWDLE_SQS_REGION`, `DAWDLE_SQS_DELAY_QUEUE`, and `DAWDLE_SQS_MESSAGE_QUEUE`.
 
+The configuration should be managed either via `config.exs` or by setting the
+environment variables. Trying to mix the two will result in some changes being
+overwritten in surprising ways. Caveat emptor.
+
 
 ## Setting Up Your SQS Queues
 
@@ -76,7 +80,7 @@ configuration instructions on that page to set up your AWS key.
 Dawdle uses two queues: one for normal messages and one for delayed events. The
 message queue *must* be a FIFO Queue and the delay queue *must* be a Standard
 Queue. They can be configured with default values, __except__ that
-`Receive Message Wait Time` should be set to 20 seconds.
+`Receive Message Wait Time` should be set to 20 seconds to enable long polling.
 
 The queues can be created using the `aws` CLI or from the AWS Control Panel.
 
