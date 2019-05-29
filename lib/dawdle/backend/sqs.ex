@@ -77,6 +77,8 @@ defmodule Dawdle.Backend.SQS do
 
   @impl true
   def recv(queue) do
+    soak_ssl_messages()
+
     result =
       queue
       |> SQS.receive_message(max_number_of_messages: 10)
@@ -154,4 +156,15 @@ defmodule Dawdle.Backend.SQS do
 
   defp normalize({:ok, _}), do: :ok
   defp normalize(result), do: result
+
+  # Workaround for issue https://github.com/benoitc/hackney/issues/464 to stop
+  # :ssl_closed messages building up in our queue. It appears to only occur
+  # on the recv end, not the send one - I suspect that's because it is triggered
+  # when we do an SQS receive call that times out without response.
+  defp soak_ssl_messages do
+    receive do
+      {:ssl_closed, _} -> soak_ssl_messages()
+      after 0 -> :ok
+    end
+  end
 end
