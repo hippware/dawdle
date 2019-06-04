@@ -24,7 +24,7 @@ Add `dawdle` to your list of dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:dawdle, "~> 0.5.0"}
+    {:dawdle, "~> 0.5.1"}
   ]
 end
 ```
