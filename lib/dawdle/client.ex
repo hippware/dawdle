@@ -209,6 +209,9 @@ defmodule Dawdle.Client do
     %object{} = event = MessageEncoder.decode(message)
 
     Enum.each(state.handlers, &maybe_call_handler(&1, object, event))
+  rescue
+    _ ->
+      Logger.error("Dropping message in unknown format: #{message}")
   end
 
   defp maybe_call_handler({handler, options}, object, event) do
