@@ -27,9 +27,7 @@ defmodule Dawdle.Poller do
 
     messages
     |> Enum.map(fn m -> m.body end)
-    |> send_to.recv()
-
-    source.delete(queue, messages)
+    |> send_to.recv(queue)
 
     poll(source, queue, send_to)
   end
