@@ -64,7 +64,8 @@ defmodule Dawdle.MixProject do
       {:faker, "~> 0.12", only: :test},
       {:hackney, "~> 1.7"},
       {:poison, "~> 3.0 or ~> 4.0"},
-      {:sweet_xml, "~> 0.6"}
+      {:sweet_xml, "~> 0.6"},
+      {:telemetry, "~> 0.4.0"}
     ]
   end
 

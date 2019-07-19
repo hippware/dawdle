@@ -16,4 +16,38 @@ defmodule Dawdle.MessageEncoder do
   Decode a string pulled from the queue into its original representation.
   """
   @callback decode(message :: String.t()) :: any()
+
+  @default_encoder Dawdle.MessageEncoder.Term
+
+  @spec encode(any()) :: String.t()
+  def encode(event), do: timed_op(:encode, event)
+
+  @spec decode(String.t()) :: any()
+  def decode(message), do: timed_op(:decode, message)
+
+  defp get_encoder do
+    Application.get_env(:dawdle, :encoder, @default_encoder)
+  end
+
+  defp timed_op(op, data) do
+    encoder = get_encoder()
+
+    start_time = System.monotonic_time()
+    :telemetry.execute(
+      [:dawdle, op, :start],
+      %{time: start_time},
+      %{encoder: encoder}
+    )
+
+    result = apply(encoder, op, [data])
+
+    duration = System.monotonic_time() - start_time
+    :telemetry.execute(
+      [:dawdle, op, :stop],
+      %{duration: duration},
+      %{encoder: encoder}
+    )
+
+    result
+  end
 end
