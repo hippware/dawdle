@@ -72,8 +72,9 @@ defmodule Dawdle.Client do
 
   # This function is called by the poller when new events are ready
   @doc false
-  @spec recv([binary()]) :: :ok
-  def recv(events), do: GenServer.cast(__MODULE__, {:recv, events})
+  @spec recv([binary()], binary()) :: :ok
+  def recv(events, queue),
+    do: GenServer.cast(__MODULE__, {:recv, events, queue})
 
   # GenServer implementation
 
@@ -110,8 +111,8 @@ defmodule Dawdle.Client do
   defp maybe_register_handler(false, _), do: :ok
 
   @impl true
-  def handle_cast({:recv, events}, state) do
-    decode_and_forward_events(events, state.handlers)
+  def handle_cast({:recv, events, queue}, state) do
+    _ = Task.start(fn -> decode_and_forward_events(events, queue, state) end)
     {:noreply, state}
   end
 
@@ -215,14 +216,16 @@ defmodule Dawdle.Client do
     _ -> false
   end
 
-  defp decode_and_forward_events(events, handlers) do
-    Enum.each(events, &decode_and_forward_event(&1, handlers))
+  defp decode_and_forward_events(events, queue, state) do
+    Enum.each(events, &decode_and_forward_event(&1, state.handlers))
+
+    state.backend.delete(queue, events)
   end
 
   defp decode_and_forward_event(message, handlers) do
     forward_event(MessageEncoder.decode(message), handlers)
   rescue
-    _ ->
+    _error ->
       Logger.error("Dropping message in unknown format: #{message}")
   end
 
@@ -236,7 +239,7 @@ defmodule Dawdle.Client do
 
   defp maybe_call_handler({handler, options}, object, event) do
     if should_call_handler?(options, object) do
-      Task.start(fn -> do_call_handler(handler, event) end)
+      do_call_handler(handler, event)
     end
   end
 
