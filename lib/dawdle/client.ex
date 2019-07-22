@@ -111,15 +111,21 @@ defmodule Dawdle.Client do
 
   @impl true
   def handle_cast({:recv, events}, state) do
-    Enum.each(events, &forward_event(&1, state))
+    decode_and_forward_events(events, state.handlers)
     {:noreply, state}
   end
 
   @impl true
-  def handle_call({:signal, events, _opts}, _from, state)
+  def handle_call({:signal, events, opts}, _from, state)
       when is_list(events) do
-    messages = Enum.map(events, &MessageEncoder.encode/1)
-    result = state.backend.send(messages)
+
+    result =
+      if opts[:direct] do
+        forward_events(events, state.handlers)
+      else
+        messages = Enum.map(events, &MessageEncoder.encode/1)
+        state.backend.send(messages)
+      end
 
     {:reply, result, state}
   end
@@ -129,10 +135,14 @@ defmodule Dawdle.Client do
     delay = Keyword.get(opts, :delay, 0)
 
     result =
-      if delay == 0 do
-        state.backend.send([message])
+      if opts[:direct] do
+        forward_event(event, state.handlers)
       else
-        state.backend.send_after(message, delay)
+        if delay == 0 do
+          state.backend.send([message])
+        else
+          state.backend.send_after(message, delay)
+        end
       end
 
     {:reply, result, state}
@@ -205,13 +215,23 @@ defmodule Dawdle.Client do
     _ -> false
   end
 
-  defp forward_event(message, state) do
-    %object{} = event = MessageEncoder.decode(message)
+  defp decode_and_forward_events(events, handlers) do
+    Enum.each(events, &decode_and_forward_event(&1, handlers))
+  end
 
-    Enum.each(state.handlers, &maybe_call_handler(&1, object, event))
+  defp decode_and_forward_event(message, handlers) do
+    forward_event(MessageEncoder.decode(message), handlers)
   rescue
     _ ->
       Logger.error("Dropping message in unknown format: #{message}")
+  end
+
+  defp forward_events(events, handlers) do
+    Enum.each(events, &forward_event(&1, handlers))
+  end
+
+  defp forward_event(%object{} = event, handlers) do
+    Enum.each(handlers, &maybe_call_handler(&1, object, event))
   end
 
   defp maybe_call_handler({handler, options}, object, event) do

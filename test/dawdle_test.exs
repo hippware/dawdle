@@ -185,4 +185,53 @@ defmodule DawdleTest do
       assert_receive :handled, 25_000
     end
   end
+
+  describe "direct delivery" do
+    setup do
+      Dawdle.stop_pollers()
+
+      on_exit fn ->
+        Dawdle.start_pollers()
+      end
+    end
+
+    test "should send event to a single handler" do
+      t = %TestEvent{pid: self()}
+
+      :ok = Dawdle.signal(t, direct: true)
+
+      assert_receive :handled
+    end
+
+    test "should send batched events to a single handler" do
+      t = %TestEvent{pid: self()}
+
+      :ok = Dawdle.signal([t, t, t], direct: true)
+
+      assert_receive :handled
+      assert_receive :handled
+      assert_receive :handled
+    end
+
+    test "should send event to mulitple handlers" do
+      TestRehandler.register()
+
+      t = %TestEvent{pid: self()}
+
+      :ok = Dawdle.signal(t, direct: true)
+
+      assert_receive :handled
+      assert_receive :rehandled
+    end
+
+    test "should behave when a handler crashes" do
+      CrashyTestHandler.register()
+
+      t = %TestEvent{pid: self()}
+
+      :ok = Dawdle.signal(t, direct: true)
+
+      assert_receive :handled
+    end
+  end
 end
