@@ -7,6 +7,8 @@ defmodule Dawdle.MessageEncoder do
   that can be safely enqueued.
   """
 
+  import Dawdle.Telemetry
+
   @doc """
   Encode an event into a string that is safe to enqueue.
   """
@@ -16,4 +18,32 @@ defmodule Dawdle.MessageEncoder do
   Decode a string pulled from the queue into its original representation.
   """
   @callback decode(message :: String.t()) :: any()
+
+  @default_encoder Dawdle.MessageEncoder.Term
+
+  @spec encode(any()) :: String.t()
+  def encode(event) do
+    encoder = get_encoder()
+
+    timed_fun(
+      [:dawdle, :encode],
+      %{encoder: encoder},
+      fn -> encoder.encode(event) end
+    )
+  end
+
+  @spec decode(String.t()) :: any()
+  def decode(message) do
+    encoder = get_encoder()
+
+    timed_fun(
+      [:dawdle, :decode],
+      %{encoder: encoder},
+      fn -> encoder.decode(message) end
+    )
+  end
+
+  defp get_encoder do
+    Application.get_env(:dawdle, :encoder, @default_encoder)
+  end
 end

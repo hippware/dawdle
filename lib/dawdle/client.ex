@@ -11,8 +11,10 @@ defmodule Dawdle.Client do
 
   use GenServer
 
+  import Dawdle.Telemetry
+
   alias Dawdle.Backend
-  alias Dawdle.MessageEncoder.Term, as: MessageEncoder
+  alias Dawdle.MessageEncoder
   alias Dawdle.Poller.Supervisor, as: PollerSup
 
   require Logger
@@ -112,39 +114,59 @@ defmodule Dawdle.Client do
 
   @impl true
   def handle_cast({:recv, events, queue}, state) do
-    _ = Task.start(fn -> decode_and_forward_events(events, queue, state) end)
+    _ =
+      Task.start(fn ->
+        timed_fun([:dawdle, :receive], %{}, %{count: length(events)}, fn ->
+          decode_and_forward_events(events, queue, state)
+        end)
+      end)
+
     {:noreply, state}
   end
 
   @impl true
   def handle_call({:signal, events, opts}, _from, state)
       when is_list(events) do
-
     result =
-      if opts[:direct] do
-        forward_events(events, state.handlers)
-      else
-        messages = Enum.map(events, &MessageEncoder.encode/1)
-        state.backend.send(messages)
-      end
+      timed_fun(
+        [:dawdle, :signal],
+        %{backend: state.backend, options: opts},
+        %{count: length(events)},
+        fn ->
+          if opts[:direct] do
+            forward_events(events, state.handlers)
+          else
+            events
+            |> Enum.map(&MessageEncoder.encode/1)
+            |> state.backend.send()
+          end
+        end
+      )
 
     {:reply, result, state}
   end
 
   def handle_call({:signal, event, opts}, _from, state) do
-    message = MessageEncoder.encode(event)
-    delay = Keyword.get(opts, :delay, 0)
-
     result =
-      if opts[:direct] do
-        forward_event(event, state.handlers)
-      else
-        if delay == 0 do
-          state.backend.send([message])
-        else
-          state.backend.send_after(message, delay)
+      timed_fun(
+        [:dawdle, :signal],
+        %{backend: state.backend, options: opts},
+        %{count: 1},
+        fn ->
+          if opts[:direct] do
+            forward_event(event, state.handlers)
+          else
+            message = MessageEncoder.encode(event)
+            delay = Keyword.get(opts, :delay, 0)
+
+            if delay == 0 do
+              state.backend.send([message])
+            else
+              state.backend.send_after(message, delay)
+            end
+          end
         end
-      end
+      )
 
     {:reply, result, state}
   end
@@ -239,7 +261,11 @@ defmodule Dawdle.Client do
 
   defp maybe_call_handler({handler, options}, object, event) do
     if should_call_handler?(options, object) do
-      do_call_handler(handler, event)
+      timed_fun(
+        [:dawdle, :handler],
+        %{handler: handler, options: options, object: object},
+        fn -> do_call_handler(handler, event) end
+      )
     end
   end
 
