@@ -11,6 +11,8 @@ defmodule Dawdle.Client do
 
   use GenServer
 
+  import Dawdle.Telemetry
+
   alias Dawdle.Backend
   alias Dawdle.MessageEncoder
   alias Dawdle.Poller.Supervisor, as: PollerSup
@@ -112,23 +114,12 @@ defmodule Dawdle.Client do
 
   @impl true
   def handle_cast({:recv, events, queue}, state) do
-    _ = Task.start(fn ->
-      start_time = System.monotonic_time()
-      :telemetry.execute(
-        [:dawdle, :receive, :start],
-        %{time: start_time, count: length(events)},
-        %{}
-      )
-
-      decode_and_forward_events(events, queue, state)
-
-      duration = System.monotonic_time() - start_time
-      :telemetry.execute(
-        [:dawdle, :receive, :stop],
-        %{duration: duration, count: length(events)},
-        %{}
-      )
-    end)
+    _ =
+      Task.start(fn ->
+        timed_fun(:receive, %{}, %{count: length(events)}, fn ->
+          decode_and_forward_events(events, queue, state)
+        end)
+      end)
 
     {:noreply, state}
   end
@@ -136,59 +127,46 @@ defmodule Dawdle.Client do
   @impl true
   def handle_call({:signal, events, opts}, _from, state)
       when is_list(events) do
-    start_time = System.monotonic_time()
-    :telemetry.execute(
-      [:dawdle, :signal, :start],
-      %{time: start_time, count: length(events)},
-      %{backend: state.backend, options: opts}
-    )
-
     result =
-      if opts[:direct] do
-        forward_events(events, state.handlers)
-      else
-        messages = Enum.map(events, &MessageEncoder.encode/1)
-        state.backend.send(messages)
-      end
-
-    duration = System.monotonic_time() - start_time
-    :telemetry.execute(
-      [:dawdle, :signal, :stop],
-      %{duration: duration, count: length(events)},
-      %{backend: state.backend, options: opts}
-    )
+      timed_fun(
+        :signal,
+        %{backend: state.backend, options: opts},
+        %{count: length(events)},
+        fn ->
+          if opts[:direct] do
+            forward_events(events, state.handlers)
+          else
+            events
+            |> Enum.map(&MessageEncoder.encode/1)
+            |> state.backend.send()
+          end
+        end
+      )
 
     {:reply, result, state}
   end
 
   def handle_call({:signal, event, opts}, _from, state) do
-    start_time = System.monotonic_time()
-    :telemetry.execute(
-      [:dawdle, :signal, :start],
-      %{time: start_time, count: 1},
-      %{backend: state.backend, options: opts}
-    )
-
-    message = MessageEncoder.encode(event)
-    delay = Keyword.get(opts, :delay, 0)
-
     result =
-      if opts[:direct] do
-        forward_event(event, state.handlers)
-      else
-        if delay == 0 do
-          state.backend.send([message])
-        else
-          state.backend.send_after(message, delay)
-        end
-      end
+      timed_fun(
+        :signal,
+        %{backend: state.backend, options: opts},
+        %{count: 1},
+        fn ->
+          if opts[:direct] do
+            forward_event(event, state.handlers)
+          else
+            message = MessageEncoder.encode(event)
+            delay = Keyword.get(opts, :delay, 0)
 
-    duration = System.monotonic_time() - start_time
-    :telemetry.execute(
-      [:dawdle, :signal, :stop],
-      %{duration: duration, count: 1},
-      %{backend: state.backend, options: opts}
-    )
+            if delay == 0 do
+              state.backend.send([message])
+            else
+              state.backend.send_after(message, delay)
+            end
+          end
+        end
+      )
 
     {:reply, result, state}
   end
@@ -283,20 +261,10 @@ defmodule Dawdle.Client do
 
   defp maybe_call_handler({handler, options}, object, event) do
     if should_call_handler?(options, object) do
-      start_time = System.monotonic_time()
-      :telemetry.execute(
-        [:dawdle, :handler, :start],
-        %{time: start_time},
-        %{handler: handler, options: options, object: object}
-      )
-
-      do_call_handler(handler, event)
-
-      duration = System.monotonic_time() - start_time
-      :telemetry.execute(
-        [:dawdle, :handler, :stop],
-        %{duration: duration},
-        %{handler: handler, options: options, object: object}
+      timed_fun(
+        :handler,
+        %{handler: handler, options: options, object: object},
+        fn -> do_call_handler(handler, event) end
       )
     end
   end
