@@ -3,7 +3,7 @@ defmodule Dawdle.Telemetry do
 
   # Helpers for executing Telemetry events in Dawdle.
 
-  @spec timed_fun(atom(), map(), map(), (() -> result)) :: result
+  @spec timed_fun([atom(), ...], map(), map(), (() -> result)) :: result
         when result: any()
   def timed_fun(name, metadata, measurements \\ %{}, fun) do
     {duration, result} = :timer.tc(fun)
