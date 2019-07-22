@@ -9,7 +9,7 @@ defmodule Dawdle.Telemetry do
     {duration, result} = :timer.tc(fun)
 
     :telemetry.execute(
-      [:dawdle, name],
+      name,
       Map.put(measurements, :duration, duration),
       metadata
     )

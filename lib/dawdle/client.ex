@@ -116,7 +116,7 @@ defmodule Dawdle.Client do
   def handle_cast({:recv, events, queue}, state) do
     _ =
       Task.start(fn ->
-        timed_fun(:receive, %{}, %{count: length(events)}, fn ->
+        timed_fun([:dawdle, :receive], %{}, %{count: length(events)}, fn ->
           decode_and_forward_events(events, queue, state)
         end)
       end)
@@ -129,7 +129,7 @@ defmodule Dawdle.Client do
       when is_list(events) do
     result =
       timed_fun(
-        :signal,
+        [:dawdle, :signal],
         %{backend: state.backend, options: opts},
         %{count: length(events)},
         fn ->
@@ -149,7 +149,7 @@ defmodule Dawdle.Client do
   def handle_call({:signal, event, opts}, _from, state) do
     result =
       timed_fun(
-        :signal,
+        [:dawdle, :signal],
         %{backend: state.backend, options: opts},
         %{count: 1},
         fn ->
@@ -262,7 +262,7 @@ defmodule Dawdle.Client do
   defp maybe_call_handler({handler, options}, object, event) do
     if should_call_handler?(options, object) do
       timed_fun(
-        :handler,
+        [:dawdle, :handler],
         %{handler: handler, options: options, object: object},
         fn -> do_call_handler(handler, event) end
       )

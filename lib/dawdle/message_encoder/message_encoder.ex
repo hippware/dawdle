@@ -25,14 +25,22 @@ defmodule Dawdle.MessageEncoder do
   def encode(event) do
     encoder = get_encoder()
 
-    timed_fun(:encode, %{encoder: encoder}, fn -> encoder.encode(event) end)
+    timed_fun(
+      [:dawdle, :encode],
+      %{encoder: encoder},
+      fn -> encoder.encode(event) end
+    )
   end
 
   @spec decode(String.t()) :: any()
   def decode(message) do
     encoder = get_encoder()
 
-    timed_fun(:decode, %{encoder: encoder}, fn -> encoder.decode(message) end)
+    timed_fun(
+      [:dawdle, :decode],
+      %{encoder: encoder},
+      fn -> encoder.decode(message) end
+    )
   end
 
   defp get_encoder do
