@@ -30,7 +30,7 @@ defmodule Dawdle.Client do
 
   @spec register_all_handlers() :: :ok
   def register_all_handlers do
-    GenServer.call(__MODULE__, :register_all_handlers)
+    auto_register_handlers()
   end
 
   @spec register_handler(Dawdle.handler(), Keyword.t()) ::
@@ -56,7 +56,8 @@ defmodule Dawdle.Client do
 
   @spec start_pollers :: :ok
   def start_pollers do
-    GenServer.call(__MODULE__, :start_pollers)
+    :ok = GenServer.call(__MODULE__, :start_pollers)
+    :ok = auto_register_handlers()
   end
 
   @spec stop_pollers :: :ok
@@ -95,22 +96,13 @@ defmodule Dawdle.Client do
   @impl true
   def handle_continue(_, state) do
     _ =
-      if Confex.get_env(:dawdle, :start_pollers),
-        do: do_start_pollers(state.backend)
+      if Confex.get_env(:dawdle, :start_pollers) do
+        do_start_pollers(state.backend)
+        Task.start(&auto_register_handlers/0)
+      end
 
     {:noreply, state}
   end
-
-  defp auto_register_handlers do
-    for {mod, _} <- :code.all_loaded() do
-      mod
-      |> handler?()
-      |> maybe_register_handler(mod)
-    end
-  end
-
-  defp maybe_register_handler(true, mod), do: mod.register()
-  defp maybe_register_handler(false, _), do: :ok
 
   @impl true
   def handle_cast({:recv, events, queue}, state) do
@@ -171,12 +163,6 @@ defmodule Dawdle.Client do
     {:reply, result, state}
   end
 
-  def handle_call(:register_all_handlers, _from, state) do
-    {:ok, _} = Task.start(&auto_register_handlers/0)
-
-    {:reply, :ok, state}
-  end
-
   def handle_call({:register_handler, handler, options}, _from, state) do
     if handler?(handler) do
       options = Keyword.take(options, [:only, :except])
@@ -210,7 +196,7 @@ defmodule Dawdle.Client do
   end
 
   def handle_call(:start_pollers, _from, state) do
-    _ = do_start_pollers(state.backend)
+    do_start_pollers(state.backend)
 
     {:reply, :ok, state}
   end
@@ -227,7 +213,17 @@ defmodule Dawdle.Client do
 
   defp do_start_pollers(backend) do
     :ok = PollerSup.start_pollers(backend, __MODULE__)
-    {:ok, _} = Task.start(&auto_register_handlers/0)
+  end
+
+  defp auto_register_handlers do
+    Enum.each(
+      :code.all_loaded(),
+      fn {mod, _} ->
+        mod
+        |> handler?()
+        |> maybe_register_handler(mod)
+      end
+    )
   end
 
   defp handler?(mod) do
@@ -237,6 +233,9 @@ defmodule Dawdle.Client do
   rescue
     _ -> false
   end
+
+  defp maybe_register_handler(true, mod), do: mod.register()
+  defp maybe_register_handler(false, _), do: :ok
 
   defp decode_and_forward_events(events, queue, state) do
     Enum.each(events, &decode_and_forward_event(&1, state.handlers))
