@@ -164,7 +164,8 @@ defmodule Dawdle.Backend.SQS do
   defp soak_ssl_messages do
     receive do
       {:ssl_closed, _} -> soak_ssl_messages()
-      after 0 -> :ok
+    after
+      0 -> :ok
     end
   end
 end
