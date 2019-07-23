@@ -54,6 +54,9 @@ defmodule Dawdle.BackendTest do
     message = Lorem.sentence()
 
     assert :ok = backend.send_after(message, 1)
+
+    Process.sleep(10)
+
     assert {:ok, messages} = backend.recv(q)
     assert :ok = backend.delete(q, messages)
 
