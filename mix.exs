@@ -53,6 +53,7 @@ defmodule Dawdle.MixProject do
 
   defp deps do
     [
+      {:backoff, "~> 1.1"},
       {:confex, "~> 3.4"},
       {:credo, "~> 1.0", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 1.0.0-rc.6", only: [:dev], runtime: false},
