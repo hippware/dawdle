@@ -26,14 +26,14 @@ defmodule Dawdle.Backend.SQS do
       )
       |> ExAws.request(aws_config())
 
-    _ =
-      Logger.info(fn ->
-        """
-        Sent message to #{message_queue()}:
-          message: #{inspect(message, pretty: true)}"
-          result: #{inspect(result, pretty: true)}
-        """
-      end)
+    do_log_result(
+      result,
+      """
+      Sent message to #{message_queue()}:
+        message: #{inspect(message, pretty: true)}"
+        result: #{inspect(result, pretty: true)}
+      """
+    )
 
     normalize(result)
   end
@@ -44,14 +44,14 @@ defmodule Dawdle.Backend.SQS do
       |> SQS.send_message_batch(batchify(messages))
       |> ExAws.request(aws_config())
 
-    _ =
-      Logger.info(fn ->
-        """
-        Sent #{length(messages)} messages to #{message_queue()}:
-          messages: #{inspect(messages, pretty: true)}
-          result: #{inspect(result, pretty: true)}
-        """
-      end)
+    do_log_result(
+      result,
+      """
+      Sent #{length(messages)} messages to #{message_queue()}:
+        messages: #{inspect(messages, pretty: true)}
+        result: #{inspect(result, pretty: true)}
+      """
+    )
 
     normalize(result)
   end
@@ -63,14 +63,14 @@ defmodule Dawdle.Backend.SQS do
       |> SQS.send_message(message, delay_seconds: delay)
       |> ExAws.request(aws_config())
 
-    _ =
-      Logger.info(fn ->
-        """
-        Sent message to #{delay_queue()} with delay of #{delay}:
-          message: #{inspect(message, pretty: true)}
-          result: #{inspect(result, pretty: true)}
-        """
-      end)
+    do_log_result(
+      result,
+      """
+      Sent message to #{delay_queue()} with delay of #{delay}:
+        message: #{inspect(message, pretty: true)}
+        result: #{inspect(result, pretty: true)}
+      """
+    )
 
     normalize(result)
   end
@@ -92,7 +92,7 @@ defmodule Dawdle.Backend.SQS do
 
       {:ok, %{body: %{messages: messages}}} ->
         _ =
-          Logger.info(fn ->
+          Logger.debug(fn ->
             "Received messages from '#{queue}': " <>
               "#{inspect(messages, pretty: true)}"
           end)
@@ -113,14 +113,14 @@ defmodule Dawdle.Backend.SQS do
       |> SQS.delete_message_batch(del_list)
       |> ExAws.request(aws_config())
 
-    _ =
-      Logger.info(fn ->
-        """
-        Deleted messages from '#{queue}':
-          messages: #{inspect(messages, pretty: true)}"
-          result: #{inspect(result, pretty: true)}
-        """
-      end)
+    do_log_result(
+      result,
+      """
+      Deleted messages from '#{queue}':
+        messages: #{inspect(messages, pretty: true)}"
+        result: #{inspect(result, pretty: true)}
+      """
+    )
 
     normalize(result)
   end
@@ -156,6 +156,18 @@ defmodule Dawdle.Backend.SQS do
 
   defp normalize({:ok, _}), do: :ok
   defp normalize(result), do: result
+
+  defp do_log_result(result, message) do
+    level =
+      case result do
+        {:ok, _} -> :debug
+        {:error, _} -> :error
+      end
+
+    _ = Logger.log(level, message)
+
+    :ok
+  end
 
   # Workaround for issue https://github.com/benoitc/hackney/issues/464 to stop
   # :ssl_closed messages building up in our queue. It appears to only occur
