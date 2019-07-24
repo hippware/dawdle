@@ -98,6 +98,17 @@ defmodule Dawdle.Backend.SQS do
           end)
 
         {:ok, messages}
+
+      {:error, _} = error ->
+        _ =
+          Logger.error(
+            """
+            Error receiving messages from queue #{queue}:
+              #{inspect(error, pretty: true)}
+            """
+          )
+
+        error
     end
   end
 
