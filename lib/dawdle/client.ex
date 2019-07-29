@@ -73,11 +73,11 @@ defmodule Dawdle.Client do
     GenServer.call(__MODULE__, :clear_all_handlers)
   end
 
-  # This function is called by the poller when new events are ready
+  # This function is called by the poller when new messages are ready
   @doc false
   @spec recv([binary()], binary()) :: :ok
-  def recv(events, queue),
-    do: GenServer.cast(__MODULE__, {:recv, events, queue})
+  def recv(messages, queue),
+    do: GenServer.cast(__MODULE__, {:recv, messages, queue})
 
   # GenServer implementation
 
@@ -105,11 +105,11 @@ defmodule Dawdle.Client do
   end
 
   @impl true
-  def handle_cast({:recv, events, queue}, state) do
+  def handle_cast({:recv, messages, queue}, state) do
     _ =
       Task.start(fn ->
-        timed_fun([:dawdle, :receive], %{}, %{count: length(events)}, fn ->
-          decode_and_forward_events(events, queue, state)
+        timed_fun([:dawdle, :receive], %{}, %{count: length(messages)}, fn ->
+          decode_and_forward_events(messages, queue, state)
         end)
       end)
 
@@ -237,10 +237,10 @@ defmodule Dawdle.Client do
   defp maybe_register_handler(true, mod), do: mod.register()
   defp maybe_register_handler(false, _), do: :ok
 
-  defp decode_and_forward_events(events, queue, state) do
-    Enum.each(events, &decode_and_forward_event(&1, state.handlers))
+  defp decode_and_forward_events(messages, queue, state) do
+    Enum.each(messages, &decode_and_forward_event(&1.body, state.handlers))
 
-    state.backend.delete(queue, events)
+    state.backend.delete(queue, messages)
   end
 
   defp decode_and_forward_event(message, handlers) do

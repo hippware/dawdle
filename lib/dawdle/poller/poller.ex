@@ -29,9 +29,7 @@ defmodule Dawdle.Poller do
     backoff =
       case source.recv(queue) do
         {:ok, messages} ->
-          messages
-          |> Enum.map(fn m -> m.body end)
-          |> send_to.recv(queue)
+          send_to.recv(messages, queue)
 
           @base_backoff
 
