@@ -60,6 +60,7 @@ defmodule Dawdle.MixProject do
       {:eventually, "~> 1.0", only: :test},
       {:ex_aws, "~> 2.0"},
       {:ex_aws_sqs, "~> 2.0"},
+      {:ex_check, ">= 0.0.0", only: [:dev, :test], runtime: false},
       {:ex_doc, ">= 0.0.0", only: :dev},
       {:excoveralls, "~> 0.10", only: :test},
       {:faker, "~> 0.12", only: :test},
