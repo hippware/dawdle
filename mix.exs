@@ -66,6 +66,7 @@ defmodule Dawdle.MixProject do
       {:excoveralls, "~> 0.10", only: :test},
       {:faker, "~> 0.12", only: :test},
       {:hackney, "~> 1.7"},
+      {:mock, "~> 0.3", only: :test},
       {:module_config, "~> 1.0"},
       {:poison, "~> 3.0 or ~> 4.0"},
       {:sweet_xml, "~> 0.6"},

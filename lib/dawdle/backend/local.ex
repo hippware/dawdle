@@ -42,6 +42,14 @@ defmodule Dawdle.Backend.Local do
   @impl true
   def delete(_, _), do: :ok
 
+  @doc false
+  @spec count :: :non_neg_integer
+  def count, do: GenServer.call(__MODULE__, :count)
+
+  @doc false
+  @spec flush :: :ok
+  def flush, do: GenServer.call(__MODULE__, :flush)
+
   @impl true
   def init(_) do
     {:ok, {[], []}}
@@ -68,6 +76,10 @@ defmodule Dawdle.Backend.Local do
 
   def handle_call(:flush, _from, _) do
     {:reply, :ok, {[], []}}
+  end
+
+  def handle_call(:count, _from, {messages, _} = state) do
+    {:reply, length(messages), state}
   end
 
   defp transform_messages(messages) do
