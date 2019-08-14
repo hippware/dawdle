@@ -53,7 +53,7 @@ defmodule Dawdle.Backend.LocalTest do
 
       :ok = Local.send_after(message, 5)
 
-      assert_eventually Local.count() == 1
+      assert_eventually(Local.count() == 1)
     end
   end
 

@@ -45,8 +45,8 @@ defmodule Dawdle.Backend.SQSTest do
     test "sending a single message when there is an error" do
       with_mock ExAws, request: fn _, _ -> {:error, :testing} end do
         assert capture_log(fn ->
-          assert {:error, :testing} = SQS.send([Lorem.sentence()])
-        end) =~ "{:error, :testing}"
+                 assert {:error, :testing} = SQS.send([Lorem.sentence()])
+               end) =~ "{:error, :testing}"
       end
     end
 
@@ -62,8 +62,10 @@ defmodule Dawdle.Backend.SQSTest do
                       path: ^path,
                       params: %{
                         "Action" => "SendMessageBatch",
-                        "SendMessageBatchRequestEntry.1.MessageBody" => ^message1,
-                        "SendMessageBatchRequestEntry.2.MessageBody" => ^message2,
+                        "SendMessageBatchRequestEntry.1.MessageBody" =>
+                          ^message1,
+                        "SendMessageBatchRequestEntry.2.MessageBody" =>
+                          ^message2
                       }
                     },
                     _ ->
@@ -76,8 +78,9 @@ defmodule Dawdle.Backend.SQSTest do
     test "sending multiple messages when there is an error" do
       with_mock ExAws, request: fn _, _ -> {:error, :testing} end do
         assert capture_log(fn ->
-          assert {:error, :testing} = SQS.send([Lorem.sentence(), Lorem.sentence()])
-        end) =~ "{:error, :testing}"
+                 assert {:error, :testing} =
+                          SQS.send([Lorem.sentence(), Lorem.sentence()])
+               end) =~ "{:error, :testing}"
       end
     end
   end
@@ -108,8 +111,9 @@ defmodule Dawdle.Backend.SQSTest do
     test "sending a delayed message when there is an error" do
       with_mock ExAws, request: fn _, _ -> {:error, :testing} end do
         assert capture_log(fn ->
-          assert {:error, :testing} = SQS.send_after(Lorem.sentence(), 10)
-        end) =~ "{:error, :testing}"
+                 assert {:error, :testing} =
+                          SQS.send_after(Lorem.sentence(), 10)
+               end) =~ "{:error, :testing}"
       end
     end
   end
@@ -130,7 +134,7 @@ defmodule Dawdle.Backend.SQSTest do
                       }
                     },
                     _ ->
-            {:ok, %{body: %{messages: messages}}}
+          {:ok, %{body: %{messages: messages}}}
         end do
         assert {:ok, messages} = SQS.recv(q)
       end
@@ -152,12 +156,12 @@ defmodule Dawdle.Backend.SQSTest do
                       }
                     },
                     _ ->
-            if Agent.get(agent, & &1) do
-              Agent.update(agent, fn _ -> false end)
-              {:ok, %{body: %{messages: []}}}
-            else
-              {:ok, %{body: %{messages: messages}}}
-            end
+          if Agent.get(agent, & &1) do
+            Agent.update(agent, fn _ -> false end)
+            {:ok, %{body: %{messages: []}}}
+          else
+            {:ok, %{body: %{messages: messages}}}
+          end
         end do
         assert {:ok, messages} = SQS.recv(q)
       end
@@ -166,8 +170,8 @@ defmodule Dawdle.Backend.SQSTest do
     test "receiving messages when there is an error", %{message_queue: q} do
       with_mock ExAws, request: fn _, _ -> {:error, :testing} end do
         assert capture_log(fn ->
-          assert {:error, :testing} = SQS.recv(q)
-        end) =~ "{:error, :testing}"
+                 assert {:error, :testing} = SQS.recv(q)
+               end) =~ "{:error, :testing}"
       end
     end
   end
@@ -189,7 +193,7 @@ defmodule Dawdle.Backend.SQSTest do
                       }
                     },
                     _ ->
-            {:ok, :testing}
+          {:ok, :testing}
         end do
         assert :ok = SQS.delete(q, messages)
       end
@@ -200,8 +204,8 @@ defmodule Dawdle.Backend.SQSTest do
 
       with_mock ExAws, request: fn _, _ -> {:error, :testing} end do
         assert capture_log(fn ->
-          assert {:error, :testing} = SQS.delete(q, messages)
-        end) =~ "{:error, :testing}"
+                 assert {:error, :testing} = SQS.delete(q, messages)
+               end) =~ "{:error, :testing}"
       end
     end
   end
