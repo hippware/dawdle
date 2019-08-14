@@ -3,6 +3,8 @@ defmodule Dawdle.Backend.SQS do
   Implementation of the `Dawdle.Backend` behaviour for Amazon SQS.
   """
 
+  use ModuleConfig, otp_app: :dawdle
+
   alias ExAws.SQS
 
   require Logger
@@ -24,7 +26,7 @@ defmodule Dawdle.Backend.SQS do
         message_group_id: @group_id,
         message_deduplication_id: id()
       )
-      |> ExAws.request(aws_config())
+      |> request()
 
     do_log_result(
       result,
@@ -42,7 +44,7 @@ defmodule Dawdle.Backend.SQS do
     result =
       message_queue()
       |> SQS.send_message_batch(batchify(messages))
-      |> ExAws.request(aws_config())
+      |> request()
 
     do_log_result(
       result,
@@ -61,7 +63,7 @@ defmodule Dawdle.Backend.SQS do
     result =
       delay_queue()
       |> SQS.send_message(message, delay_seconds: delay)
-      |> ExAws.request(aws_config())
+      |> request()
 
     do_log_result(
       result,
@@ -82,7 +84,7 @@ defmodule Dawdle.Backend.SQS do
     result =
       queue
       |> SQS.receive_message(max_number_of_messages: 10)
-      |> ExAws.request(aws_config())
+      |> request()
 
     case result do
       {:ok, %{body: %{messages: []}}} ->
@@ -120,7 +122,7 @@ defmodule Dawdle.Backend.SQS do
     result =
       queue
       |> SQS.delete_message_batch(del_list)
-      |> ExAws.request(aws_config())
+      |> request()
 
     do_log_result(
       result,
@@ -134,16 +136,11 @@ defmodule Dawdle.Backend.SQS do
     normalize(result)
   end
 
-  defp message_queue, do: config(:message_queue)
+  defp request(data), do: ExAws.request(data, region: get_config(:region))
 
-  defp delay_queue, do: config(:delay_queue)
+  defp message_queue, do: get_config(:message_queue)
 
-  defp aws_config, do: [region: config(:region)]
-
-  defp config(term) do
-    Confex.fetch_env!(:dawdle, __MODULE__)
-    |> Keyword.get(term)
-  end
+  defp delay_queue, do: get_config(:delay_queue)
 
   defp id do
     :crypto.strong_rand_bytes(16)
