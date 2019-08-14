@@ -42,7 +42,7 @@ defmodule DawdleTest do
 
     use Dawdle.Handler
 
-    def handle_event(_), do: raise RuntimeError
+    def handle_event(_), do: raise(RuntimeError)
   end
 
   defmodule OnlyTestHandler do
@@ -109,11 +109,9 @@ defmodule DawdleTest do
     end
 
     test "should error on bad handler" do
-      assert {:error, :module_not_handler} =
-        Dawdle.register_handler(__MODULE__)
+      assert {:error, :module_not_handler} = Dawdle.register_handler(__MODULE__)
 
-      assert {:error, :module_not_handler} =
-        Dawdle.register_handler(:bad)
+      assert {:error, :module_not_handler} = Dawdle.register_handler(:bad)
     end
   end
 
@@ -121,7 +119,7 @@ defmodule DawdleTest do
     test "should register all known handlers" do
       :ok = Dawdle.register_all_handlers()
 
-      assert_eventually Dawdle.handler_count() == 6
+      assert_eventually(Dawdle.handler_count() == 6)
     end
   end
 
@@ -190,9 +188,9 @@ defmodule DawdleTest do
     setup do
       Dawdle.stop_pollers()
 
-      on_exit fn ->
+      on_exit(fn ->
         Dawdle.start_pollers()
-      end
+      end)
     end
 
     test "should send event to a single handler" do
