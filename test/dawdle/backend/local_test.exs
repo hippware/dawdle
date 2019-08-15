@@ -47,11 +47,13 @@ defmodule Dawdle.Backend.LocalTest do
     end
   end
 
-  describe "send_after/1" do
+  describe "send_after/2" do
     test "sending a delayed message" do
       message = Lorem.sentence()
 
-      :ok = Local.send_after(message, 5)
+      :ok = Local.send_after(message, 10)
+
+      assert Local.count() == 0
 
       assert_eventually(Local.count() == 1)
     end
