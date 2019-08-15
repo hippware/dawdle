@@ -21,9 +21,7 @@ defmodule Dawdle.BackendTest do
     delay_queue = hd(Enum.reverse(backend.queues()))
 
     {:ok,
-      backend: backend,
-      message_queue: message_queue,
-      delay_queue: delay_queue}
+     backend: backend, message_queue: message_queue, delay_queue: delay_queue}
   end
 
   test "basic send and receive", %{backend: backend, message_queue: q} do

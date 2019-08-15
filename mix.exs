@@ -55,6 +55,7 @@ defmodule Dawdle.MixProject do
     [
       {:backoff, "~> 1.1"},
       {:confex, "~> 3.4"},
+      {:configparser_ex, "~> 4.0", only: [:dev, :test]},
       {:credo, "~> 1.0", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 1.0.0-rc.6", only: [:dev], runtime: false},
       {:eventually, "~> 1.0", only: :test},
@@ -65,6 +66,8 @@ defmodule Dawdle.MixProject do
       {:excoveralls, "~> 0.10", only: :test},
       {:faker, "~> 0.12", only: :test},
       {:hackney, "~> 1.7"},
+      {:mock, "~> 0.3", only: :test},
+      {:module_config, "~> 1.0"},
       {:poison, "~> 3.0 or ~> 4.0"},
       {:sweet_xml, "~> 0.6"},
       {:telemetry, "~> 0.4.0"}
