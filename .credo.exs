@@ -142,7 +142,7 @@
         {Credo.Check.Consistency.MultiAliasImportRequireUse, []},
         {Credo.Check.Consistency.UnusedVariableNames, false},
         {Credo.Check.Design.DuplicatedCode, []},
-        {Credo.Check.Readability.AliasAs, []},
+        {Credo.Check.Readability.AliasAs, false},
         {Credo.Check.Readability.MultiAlias, []},
         {Credo.Check.Readability.Specs, []},
         {Credo.Check.Readability.SinglePipe, false},
