@@ -3,8 +3,6 @@ defmodule Dawdle.Poller.Supervisor do
 
   use Supervisor
 
-  alias Dawdle.Poller
-
   @spec start_link(any()) :: Supervisor.on_start()
   def start_link(init_arg) do
     Supervisor.start_link(__MODULE__, init_arg, name: __MODULE__)
@@ -21,7 +19,10 @@ defmodule Dawdle.Poller.Supervisor do
   end
 
   defp start_poller(source, queue, send_to) do
-    case Supervisor.start_child(__MODULE__, {Poller, {source, queue, send_to}}) do
+    case Supervisor.start_child(
+           __MODULE__,
+           {source.poller(), {source, queue, send_to}}
+         ) do
       {:ok, _} -> :ok
       {:error, {:already_started, _}} -> :ok
     end

@@ -6,6 +6,7 @@ defmodule Dawdle.Backend.SQS do
   use ModuleConfig, otp_app: :dawdle
 
   alias ExAws.SQS
+  alias Dawdle.BasicPoller
 
   require Logger
 
@@ -17,6 +18,9 @@ defmodule Dawdle.Backend.SQS do
 
   @impl true
   def queues, do: [message_queue(), delay_queue()]
+
+  @impl true
+  def poller, do: BasicPoller
 
   @impl true
   def send([message]) do
@@ -60,15 +64,17 @@ defmodule Dawdle.Backend.SQS do
 
   @impl true
   def send_after(message, delay) do
+    delay_sec = div(delay, 1000)
+
     result =
       delay_queue()
-      |> SQS.send_message(message, delay_seconds: delay)
+      |> SQS.send_message(message, delay_seconds: delay_sec)
       |> request()
 
     do_log_result(
       result,
       """
-      Sent message to #{delay_queue()} with delay of #{delay}:
+      Sent message to #{delay_queue()} with delay of #{delay_sec}s:
         message: #{inspect(message, pretty: true)}
         result: #{inspect(result, pretty: true)}
       """

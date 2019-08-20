@@ -20,7 +20,9 @@ defmodule Dawdle.Delay.HandlerTest do
   test "delayed function call" do
     pid = self()
 
-    Dawdle.call_after(1, fn -> send(pid, :handled) end)
+    Dawdle.call_after(1, fn -> send(pid, :handled) end,
+      delay_unit: :milliseconds
+    )
 
     assert_receive :handled
   end
@@ -28,7 +30,9 @@ defmodule Dawdle.Delay.HandlerTest do
   test "long delayed function call" do
     pid = self()
 
-    Dawdle.call_after(30 * 60, fn -> send(pid, :handled) end)
+    Dawdle.call_after(30 * 60, fn -> send(pid, :handled) end,
+      delay_unit: :milliseconds
+    )
 
     assert_receive :handled, 2_000
   end

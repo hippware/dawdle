@@ -9,6 +9,8 @@ defmodule Dawdle.Backend.Local do
 
   use GenServer
 
+  alias Dawdle.BasicPoller
+
   @behaviour Dawdle.Backend
 
   @impl true
@@ -25,13 +27,13 @@ defmodule Dawdle.Backend.Local do
   def queues, do: ["local"]
 
   @impl true
+  def poller, do: BasicPoller
+
+  @impl true
   def send(messages), do: GenServer.cast(__MODULE__, {:send, messages})
 
   @impl true
   def send_after(message, delay) do
-    # The SQS backend interprets the delay as seconds, whereas here we are
-    # interpreting it as milliseconds. This is to allow us to test the delay
-    # feature without the tests taking forever.
     {:ok, _} = :timer.apply_after(delay, __MODULE__, :send, [[message]])
     :ok
   end

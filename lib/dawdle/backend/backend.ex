@@ -12,6 +12,7 @@ defmodule Dawdle.Backend do
 
   @callback init() :: :ok
   @callback queues() :: [queue()]
+  @callback poller() :: module()
   @callback send([send_message()]) :: :ok | {:error, term()}
   @callback send_after(send_message(), delay_secs()) :: :ok | {:error, term()}
   @callback recv(queue()) :: {:ok, [recv_message()]} | {:error, term()}

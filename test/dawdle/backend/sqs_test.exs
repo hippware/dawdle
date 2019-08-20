@@ -104,7 +104,7 @@ defmodule Dawdle.Backend.SQSTest do
                     _ ->
           {:ok, "testing"}
         end do
-        assert :ok = SQS.send_after(message, 10)
+        assert :ok = SQS.send_after(message, 10_000)
       end
     end
 
@@ -112,7 +112,7 @@ defmodule Dawdle.Backend.SQSTest do
       with_mock ExAws, request: fn _, _ -> {:error, :testing} end do
         assert capture_log(fn ->
                  assert {:error, :testing} =
-                          SQS.send_after(Lorem.sentence(), 10)
+                          SQS.send_after(Lorem.sentence(), 10_000)
                end) =~ "{:error, :testing}"
       end
     end
