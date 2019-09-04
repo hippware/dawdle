@@ -13,23 +13,19 @@ defmodule Dawdle.Backend.SQSTest do
   end
 
   setup do
-    # This is cheating a little bit to get the queue names
-    message_queue = hd(SQS.queues())
-    delay_queue = hd(Enum.reverse(SQS.queues()))
+    queue = hd(SQS.queues())
 
-    {:ok, message_queue: message_queue, delay_queue: delay_queue}
+    {:ok, queue: queue}
   end
 
   describe "send/1" do
-    test "sending a single message", %{message_queue: q} do
-      path = "/#{q}"
+    test "sending a single message" do
       message = Lorem.sentence()
 
       with_mock ExAws,
         request: fn %Query{
                       action: :send_message,
                       service: :sqs,
-                      path: ^path,
                       params: %{
                         "Action" => "SendMessage",
                         "MessageBody" => ^message
@@ -50,8 +46,7 @@ defmodule Dawdle.Backend.SQSTest do
       end
     end
 
-    test "sending multiple messages", %{message_queue: q} do
-      path = "/#{q}"
+    test "sending multiple messages" do
       message1 = Lorem.sentence()
       message2 = Lorem.sentence()
 
@@ -59,7 +54,6 @@ defmodule Dawdle.Backend.SQSTest do
         request: fn %Query{
                       action: :send_message_batch,
                       service: :sqs,
-                      path: ^path,
                       params: %{
                         "Action" => "SendMessageBatch",
                         "SendMessageBatchRequestEntry.1.MessageBody" =>
@@ -86,15 +80,13 @@ defmodule Dawdle.Backend.SQSTest do
   end
 
   describe "send_after/1" do
-    test "sending a delayed message", %{delay_queue: q} do
-      path = "/#{q}"
+    test "sending a delayed message" do
       message = Lorem.sentence()
 
       with_mock ExAws,
         request: fn %Query{
                       action: :send_message,
                       service: :sqs,
-                      path: ^path,
                       params: %{
                         "Action" => "SendMessage",
                         "DelaySeconds" => 10,
@@ -119,15 +111,13 @@ defmodule Dawdle.Backend.SQSTest do
   end
 
   describe "recv/1" do
-    test "receiving messages", %{message_queue: q} do
-      path = "/#{q}"
+    test "receiving messages", %{queue: q} do
       messages = [Lorem.sentence()]
 
       with_mock ExAws,
         request: fn %Query{
                       action: :receive_message,
                       service: :sqs,
-                      path: ^path,
                       params: %{
                         "Action" => "ReceiveMessage",
                         "MaxNumberOfMessages" => 10
@@ -140,8 +130,7 @@ defmodule Dawdle.Backend.SQSTest do
       end
     end
 
-    test "empty receives", %{message_queue: q} do
-      path = "/#{q}"
+    test "empty receives", %{queue: q} do
       messages = [Lorem.sentence()]
       {:ok, agent} = Agent.start_link(fn -> true end)
 
@@ -149,7 +138,6 @@ defmodule Dawdle.Backend.SQSTest do
         request: fn %Query{
                       action: :receive_message,
                       service: :sqs,
-                      path: ^path,
                       params: %{
                         "Action" => "ReceiveMessage",
                         "MaxNumberOfMessages" => 10
@@ -167,7 +155,7 @@ defmodule Dawdle.Backend.SQSTest do
       end
     end
 
-    test "receiving messages when there is an error", %{message_queue: q} do
+    test "receiving messages when there is an error", %{queue: q} do
       with_mock ExAws, request: fn _, _ -> {:error, :testing} end do
         assert capture_log(fn ->
                  assert {:error, :testing} = SQS.recv(q)
@@ -177,15 +165,13 @@ defmodule Dawdle.Backend.SQSTest do
   end
 
   describe "delete/2" do
-    test "deleting messages", %{message_queue: q} do
-      path = "/#{q}"
+    test "deleting messages", %{queue: q} do
       messages = [%{receipt_handle: 1}]
 
       with_mock ExAws,
         request: fn %Query{
                       action: :delete_message_batch,
                       service: :sqs,
-                      path: ^path,
                       params: %{
                         "Action" => "DeleteMessageBatch",
                         "DeleteMessageBatchRequestEntry.1.Id" => "0",
@@ -199,7 +185,7 @@ defmodule Dawdle.Backend.SQSTest do
       end
     end
 
-    test "deleting messages when there is an error", %{message_queue: q} do
+    test "deleting messages when there is an error", %{queue: q} do
       messages = [%{receipt_handle: 1}]
 
       with_mock ExAws, request: fn _, _ -> {:error, :testing} end do

@@ -10,9 +10,14 @@ config :ex_aws,
     {:awscli, "default", 30}
   ]
 
+# config :dawdle,
+#   backend: Dawdle.Backend.SQS
+
 config :dawdle, Dawdle.Backend.SQS,
   region: "us-west-2",
-  delay_queue: "hippware-dawdle-delay-test",
-  message_queue: "hippware-dawdle-message-test.fifo"
+  delay_queue:
+    "https://sqs.us-west-2.amazonaws.com/XXXXXXXXXXXX/hippware-dawdle-delay-test",
+  message_queue:
+    "https://sqs.us-west-2.amazonaws.com/XXXXXXXXXXXX/hippware-dawdle-message-test.fifo"
 
 config :logger, level: :info
