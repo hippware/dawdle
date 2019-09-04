@@ -24,7 +24,7 @@ Add `dawdle` to your list of dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:dawdle, "~> 0.5.1"}
+    {:dawdle, "~> 0.6.0"}
   ]
 end
 ```
@@ -52,13 +52,13 @@ config :dawdle,
 You can also set the environment variables `DAWDLE_BACKEND` or
 `DAWDLE_START_LISTENER`.
 
-To configure your SQS queues, set the following:
+To configure your SQS queues, set queue URL in `config.exs`:
 
 ```elixir
 config :dawdle, Dawdle.Backend.SQS,
     region: "us-east-1",
-    delay_queue: "my-dawdle-delay-queue",
-    message_queue: "my-dawdle-message-queue.fifo"
+    delay_queue: "https://sqs.us-east-1.amazonaws.com/XXXXXXXXXXXX/my-dawdle-delay-queue",
+    message_queue: "https://sqs.us-east-1.amazonaws.com/XXXXXXXXXXXX/my-dawdle-message-queue"
 ```
 
 These values can also be set by using the environment variables
