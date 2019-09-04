@@ -11,11 +11,9 @@ defmodule Dawdle.Backend.LocalTest do
   end
 
   setup do
-    [queue] = Local.queues()
-
     Local.flush()
 
-    {:ok, queue: queue}
+    :ok
   end
 
   describe "send/1" do
@@ -59,29 +57,29 @@ defmodule Dawdle.Backend.LocalTest do
     end
   end
 
-  describe "recv/1" do
-    test "receiving a message", %{queue: q} do
+  describe "recv/0" do
+    test "receiving a message" do
       message = Lorem.sentence()
 
       :ok = Local.send([message])
 
-      assert {:ok, [message]} = Local.recv(q)
+      assert {:ok, [message]} = Local.recv()
     end
 
-    test "receiving multiple messages", %{queue: q} do
+    test "receiving multiple messages" do
       message1 = Lorem.sentence()
       message2 = Lorem.sentence()
 
       :ok = Local.send([message1, message2])
 
-      assert {:ok, [message1, message2]} = Local.recv(q)
+      assert {:ok, [message1, message2]} = Local.recv()
     end
 
-    test "receiving from an empty queue", %{queue: q} do
+    test "receiving from an empty queue" do
       message = Lorem.sentence()
 
       Task.start(fn ->
-        assert {:ok, [message]} = Local.recv(q)
+        assert {:ok, [message]} = Local.recv()
       end)
 
       Process.sleep(10)

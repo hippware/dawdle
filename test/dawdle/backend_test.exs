@@ -14,33 +14,26 @@ defmodule Dawdle.BackendTest do
   end
 
   setup do
-    backend = Backend.new()
-
-    # This is cheating a little bit to get the queue names
-    message_queue = hd(backend.queues())
-    delay_queue = hd(Enum.reverse(backend.queues()))
-
-    {:ok,
-     backend: backend, message_queue: message_queue, delay_queue: delay_queue}
+    {:ok, backend: Backend.new()}
   end
 
-  test "basic send and receive", %{backend: backend, message_queue: q} do
+  test "basic send and receive", %{backend: backend} do
     message = Lorem.sentence()
 
     assert :ok = backend.send([message])
-    assert {:ok, messages} = backend.recv(q)
-    assert :ok = backend.delete(q, messages)
+    assert {:ok, messages} = backend.recv()
+    assert :ok = backend.delete(messages)
 
     assert Enum.any?(messages, fn %{body: msg} -> msg == message end)
   end
 
-  test "send multiple messages", %{backend: backend, message_queue: q} do
+  test "send multiple messages", %{backend: backend} do
     message1 = Lorem.sentence()
     message2 = Lorem.sentence()
 
     assert :ok = backend.send([message1, message2])
-    assert {:ok, messages} = backend.recv(q)
-    assert :ok = backend.delete(q, messages)
+    assert {:ok, messages} = backend.recv()
+    assert :ok = backend.delete(messages)
 
     assert length(messages) >= 2
 
@@ -48,15 +41,15 @@ defmodule Dawdle.BackendTest do
     assert Enum.any?(messages, fn %{body: msg} -> msg == message2 end)
   end
 
-  test "send delayed message", %{backend: backend, delay_queue: q} do
+  test "send delayed message", %{backend: backend} do
     message = Lorem.sentence()
 
     assert :ok = backend.send_after(message, 1)
 
     Process.sleep(10)
 
-    assert {:ok, messages} = backend.recv(q)
-    assert :ok = backend.delete(q, messages)
+    assert {:ok, messages} = backend.recv()
+    assert :ok = backend.delete(messages)
 
     assert Enum.any?(messages, fn %{body: msg} -> msg == message end)
   end

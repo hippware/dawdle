@@ -10,28 +10,26 @@ defmodule Dawdle.Backend.SQS do
   require Logger
 
   @behaviour Dawdle.Backend
-  @group_id "dawdle_db"
 
   @impl true
   def init, do: :ok
 
   @impl true
-  def queues, do: [message_queue(), delay_queue()]
+  def queue, do: get_config(:queue_url)
 
   @impl true
   def send([message]) do
+    queue = queue()
+
     result =
-      message_queue()
-      |> SQS.send_message(message,
-        message_group_id: @group_id,
-        message_deduplication_id: id()
-      )
+      queue
+      |> SQS.send_message(message)
       |> request()
 
     do_log_result(
       result,
       """
-      Sent message to #{message_queue()}:
+      Sent message to #{queue}:
         message: #{inspect(message, pretty: true)}"
         result: #{inspect(result, pretty: true)}
       """
@@ -41,15 +39,17 @@ defmodule Dawdle.Backend.SQS do
   end
 
   def send(messages) do
+    queue = queue()
+
     result =
-      message_queue()
+      queue
       |> SQS.send_message_batch(batchify(messages))
       |> request()
 
     do_log_result(
       result,
       """
-      Sent #{length(messages)} messages to #{message_queue()}:
+      Sent #{length(messages)} messages to #{queue}:
         messages: #{inspect(messages, pretty: true)}
         result: #{inspect(result, pretty: true)}
       """
@@ -60,15 +60,17 @@ defmodule Dawdle.Backend.SQS do
 
   @impl true
   def send_after(message, delay) do
+    queue = queue()
+
     result =
-      delay_queue()
+      queue
       |> SQS.send_message(message, delay_seconds: delay)
       |> request()
 
     do_log_result(
       result,
       """
-      Sent message to #{delay_queue()} with delay of #{delay}:
+      Sent message to #{queue} with delay of #{delay}:
         message: #{inspect(message, pretty: true)}
         result: #{inspect(result, pretty: true)}
       """
@@ -78,7 +80,9 @@ defmodule Dawdle.Backend.SQS do
   end
 
   @impl true
-  def recv(queue) do
+  def recv do
+    queue = queue()
+
     soak_ssl_messages()
 
     result =
@@ -90,7 +94,7 @@ defmodule Dawdle.Backend.SQS do
       {:ok, %{body: %{messages: []}}} ->
         _ = Logger.debug(fn -> "Empty receive from '#{queue}'" end)
 
-        recv(queue)
+        recv()
 
       {:ok, %{body: %{messages: messages}}} ->
         _ =
@@ -113,7 +117,9 @@ defmodule Dawdle.Backend.SQS do
   end
 
   @impl true
-  def delete(queue, messages) do
+  def delete(messages) do
+    queue = queue()
+
     {del_list, _} =
       Enum.map_reduce(messages, 0, fn m, id ->
         {%{id: Integer.to_string(id), receipt_handle: m.receipt_handle}, id + 1}
@@ -138,10 +144,6 @@ defmodule Dawdle.Backend.SQS do
 
   defp request(data), do: ExAws.request(data, region: get_config(:region))
 
-  defp message_queue, do: get_config(:message_queue)
-
-  defp delay_queue, do: get_config(:delay_queue)
-
   defp id do
     :crypto.strong_rand_bytes(16)
     |> Base.hex_encode32(padding: false)
@@ -149,14 +151,7 @@ defmodule Dawdle.Backend.SQS do
 
   defp batchify(messages) do
     Enum.map(messages, fn m ->
-      id = id()
-
-      [
-        id: id,
-        message_body: m,
-        message_deduplication_id: id,
-        message_group_id: @group_id
-      ]
+      [id: id(), message_body: m]
     end)
   end
 

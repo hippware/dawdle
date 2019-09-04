@@ -22,7 +22,7 @@ defmodule Dawdle.Backend.Local do
   end
 
   @impl true
-  def queues, do: ["local"]
+  def queue, do: "local"
 
   @impl true
   def send(messages), do: GenServer.cast(__MODULE__, {:send, messages})
@@ -37,10 +37,10 @@ defmodule Dawdle.Backend.Local do
   end
 
   @impl true
-  def recv(_), do: GenServer.call(__MODULE__, :recv, :infinity)
+  def recv, do: GenServer.call(__MODULE__, :recv, :infinity)
 
   @impl true
-  def delete(_, _), do: :ok
+  def delete(_), do: :ok
 
   @doc false
   @spec count :: :non_neg_integer

@@ -16,12 +16,8 @@ defmodule Dawdle.Poller.Supervisor do
   end
 
   @spec start_pollers(module(), module()) :: :ok
-  def start_pollers(backend, send_to) do
-    Enum.each(backend.queues(), &start_poller(backend, &1, send_to))
-  end
-
-  defp start_poller(source, queue, send_to) do
-    case Supervisor.start_child(__MODULE__, {Poller, {source, queue, send_to}}) do
+  def start_pollers(source, send_to) do
+    case Supervisor.start_child(__MODULE__, {Poller, {source, send_to}}) do
       {:ok, _} -> :ok
       {:error, {:already_started, _}} -> :ok
     end

@@ -13,9 +13,7 @@ defmodule Dawdle.Backend.SQSTest do
   end
 
   setup do
-    queue = hd(SQS.queues())
-
-    {:ok, queue: queue}
+    {:ok, queue: SQS.queue()}
   end
 
   describe "send/1" do
@@ -111,7 +109,7 @@ defmodule Dawdle.Backend.SQSTest do
   end
 
   describe "recv/1" do
-    test "receiving messages", %{queue: q} do
+    test "receiving messages" do
       messages = [Lorem.sentence()]
 
       with_mock ExAws,
@@ -126,11 +124,11 @@ defmodule Dawdle.Backend.SQSTest do
                     _ ->
           {:ok, %{body: %{messages: messages}}}
         end do
-        assert {:ok, messages} = SQS.recv(q)
+        assert {:ok, messages} = SQS.recv()
       end
     end
 
-    test "empty receives", %{queue: q} do
+    test "empty receives" do
       messages = [Lorem.sentence()]
       {:ok, agent} = Agent.start_link(fn -> true end)
 
@@ -151,21 +149,21 @@ defmodule Dawdle.Backend.SQSTest do
             {:ok, %{body: %{messages: messages}}}
           end
         end do
-        assert {:ok, messages} = SQS.recv(q)
+        assert {:ok, messages} = SQS.recv()
       end
     end
 
-    test "receiving messages when there is an error", %{queue: q} do
+    test "receiving messages when there is an error" do
       with_mock ExAws, request: fn _, _ -> {:error, :testing} end do
         assert capture_log(fn ->
-                 assert {:error, :testing} = SQS.recv(q)
+                 assert {:error, :testing} = SQS.recv()
                end) =~ "{:error, :testing}"
       end
     end
   end
 
   describe "delete/2" do
-    test "deleting messages", %{queue: q} do
+    test "deleting messages" do
       messages = [%{receipt_handle: 1}]
 
       with_mock ExAws,
@@ -181,16 +179,16 @@ defmodule Dawdle.Backend.SQSTest do
                     _ ->
           {:ok, :testing}
         end do
-        assert :ok = SQS.delete(q, messages)
+        assert :ok = SQS.delete(messages)
       end
     end
 
-    test "deleting messages when there is an error", %{queue: q} do
+    test "deleting messages when there is an error" do
       messages = [%{receipt_handle: 1}]
 
       with_mock ExAws, request: fn _, _ -> {:error, :testing} end do
         assert capture_log(fn ->
-                 assert {:error, :testing} = SQS.delete(q, messages)
+                 assert {:error, :testing} = SQS.delete(messages)
                end) =~ "{:error, :testing}"
       end
     end
