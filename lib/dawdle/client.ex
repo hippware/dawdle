@@ -237,7 +237,7 @@ defmodule Dawdle.Client do
     results = Enum.map(handlers, &maybe_call_handler(&1, object, event))
 
     _ =
-      unless Enum.all?(results, & &1) do
+      unless Enum.any?(results, & &1) do
         Logger.warn("Unhandled event: #{inspect(event, pretty: true)}")
       end
 
