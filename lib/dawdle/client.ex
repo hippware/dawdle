@@ -129,7 +129,10 @@ defmodule Dawdle.Client do
             forward_events(events, state.handlers)
           else
             events
-            |> Enum.map(&MessageEncoder.encode/1)
+            |> Enum.map(fn event ->
+              {:ok, encoded} = MessageEncoder.encode(event)
+              encoded
+            end)
             |> state.backend.send()
           end
         end
@@ -148,7 +151,7 @@ defmodule Dawdle.Client do
           if opts[:direct] do
             forward_event(event, state.handlers)
           else
-            message = MessageEncoder.encode(event)
+            {:ok, message} = MessageEncoder.encode(event)
             delay = Keyword.get(opts, :delay, 0)
 
             if delay == 0 do
@@ -244,10 +247,13 @@ defmodule Dawdle.Client do
   end
 
   defp decode_and_forward_event(message, handlers) do
-    forward_event(MessageEncoder.decode(message), handlers)
-  rescue
-    _error ->
-      Logger.error("Dropping message in unknown format: #{message}")
+    case MessageEncoder.decode(message) do
+      {:ok, decoded} ->
+        forward_event(decoded, handlers)
+
+      {:error, :unrecognized} ->
+        Logger.error("Dropping message in unknown format: #{message}")
+    end
   end
 
   defp forward_events(events, handlers) do

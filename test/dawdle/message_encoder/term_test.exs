@@ -6,6 +6,11 @@ defmodule Dawdle.MessageEncoder.TermTest do
   @data "I sing the body electric"
 
   test "is reversible" do
-    assert @data |> Term.encode() |> Term.decode() == @data
+    assert {:ok, encoded} = Term.encode(@data)
+    assert {:ok, @data} = Term.decode(encoded)
+  end
+
+  test "unrecognized input" do
+    assert {:error, :unrecognized} == Term.decode(@data)
   end
 end
