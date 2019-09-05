@@ -22,8 +22,7 @@ defmodule Dawdle.Client do
   # These functions are delegated to here from the `Dawdle` module.
   # Their types and definitions are defined there.
 
-  @spec signal(Dawdle.event() | [Dawdle.event()], Keyword.t()) ::
-          :ok | {:error, term()}
+  @spec signal(Dawdle.event(), Keyword.t()) :: :ok | {:error, term()}
   def signal(event, opts \\ []) do
     GenServer.call(__MODULE__, {:signal, event, opts})
   end
@@ -114,30 +113,6 @@ defmodule Dawdle.Client do
   end
 
   @impl true
-  def handle_call({:signal, events, opts}, _from, state)
-      when is_list(events) do
-    result =
-      timed_fun(
-        [:dawdle, :signal],
-        %{backend: state.backend, options: opts},
-        %{count: length(events)},
-        fn ->
-          if opts[:direct] do
-            forward_events(events, state.handlers)
-          else
-            events
-            |> Enum.map(fn event ->
-              {:ok, encoded} = MessageEncoder.encode(event)
-              encoded
-            end)
-            |> state.backend.send()
-          end
-        end
-      )
-
-    {:reply, result, state}
-  end
-
   def handle_call({:signal, event, opts}, _from, state) do
     result =
       timed_fun(
@@ -146,14 +121,13 @@ defmodule Dawdle.Client do
         %{count: 1},
         fn ->
           if opts[:direct] do
-            _ = forward_event(event, state.handlers)
-            :ok
+            forward_event(event, state.handlers)
           else
             {:ok, message} = MessageEncoder.encode(event)
             delay = Keyword.get(opts, :delay, 0)
 
             if delay == 0 do
-              state.backend.send([message])
+              state.backend.send(message)
             else
               state.backend.send_after(message, delay)
             end
@@ -243,32 +217,31 @@ defmodule Dawdle.Client do
   end
 
   defp decode_and_forward_event(message, state) do
-    _ = Task.start(fn -> do_decode_and_forward_event(message, state) end)
+    Task.start(fn -> do_decode_and_forward_event(message, state) end)
   end
 
   defp do_decode_and_forward_event(message, state) do
     _ =
       case MessageEncoder.decode(message.body) do
         {:ok, decoded} ->
-          results = forward_event(decoded, state.handlers)
-
-          unless Enum.all?(results, & &1) do
-            Logger.warn("Unhandled event: #{inspect(decoded, pretty: true)}")
-          end
+          forward_event(decoded, state.handlers)
 
         {:error, :unrecognized} ->
           Logger.warn("Dropping message in unknown format: #{message.body}")
       end
 
-    state.backend.delete([message])
-  end
-
-  defp forward_events(events, handlers) do
-    Enum.each(events, &forward_event(&1, handlers))
+    state.backend.delete(message)
   end
 
   defp forward_event(%object{} = event, handlers) do
-    Enum.map(handlers, &maybe_call_handler(&1, object, event))
+    results = Enum.map(handlers, &maybe_call_handler(&1, object, event))
+
+    _ =
+      unless Enum.all?(results, & &1) do
+        Logger.warn("Unhandled event: #{inspect(event, pretty: true)}")
+      end
+
+    :ok
   end
 
   defp maybe_call_handler({handler, options}, object, event) do

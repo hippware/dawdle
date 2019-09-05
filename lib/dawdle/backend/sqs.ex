@@ -18,59 +18,23 @@ defmodule Dawdle.Backend.SQS do
   def queue, do: get_config(:queue_url)
 
   @impl true
-  def send([message]) do
+  def send(message), do: do_send(message)
+
+  @impl true
+  def send_after(message, delay), do: do_send(message, delay_seconds: delay)
+
+  defp do_send(message, opts \\ []) do
     queue = queue()
 
     result =
       queue
-      |> SQS.send_message(message)
+      |> SQS.send_message(message, opts)
       |> request()
 
     do_log_result(
       result,
       """
       Sent message to #{queue}:
-        message: #{inspect(message, pretty: true)}"
-        result: #{inspect(result, pretty: true)}
-      """
-    )
-
-    normalize(result)
-  end
-
-  def send(messages) do
-    queue = queue()
-
-    result =
-      queue
-      |> SQS.send_message_batch(batchify(messages))
-      |> request()
-
-    do_log_result(
-      result,
-      """
-      Sent #{length(messages)} messages to #{queue}:
-        messages: #{inspect(messages, pretty: true)}
-        result: #{inspect(result, pretty: true)}
-      """
-    )
-
-    normalize(result)
-  end
-
-  @impl true
-  def send_after(message, delay) do
-    queue = queue()
-
-    result =
-      queue
-      |> SQS.send_message(message, delay_seconds: delay)
-      |> request()
-
-    do_log_result(
-      result,
-      """
-      Sent message to #{queue} with delay of #{delay}:
         message: #{inspect(message, pretty: true)}
         result: #{inspect(result, pretty: true)}
       """
@@ -117,24 +81,19 @@ defmodule Dawdle.Backend.SQS do
   end
 
   @impl true
-  def delete(messages) do
+  def delete(message) do
     queue = queue()
-
-    {del_list, _} =
-      Enum.map_reduce(messages, 0, fn m, id ->
-        {%{id: Integer.to_string(id), receipt_handle: m.receipt_handle}, id + 1}
-      end)
 
     result =
       queue
-      |> SQS.delete_message_batch(del_list)
+      |> SQS.delete_message(message.receipt_handle)
       |> request()
 
     do_log_result(
       result,
       """
-      Deleted messages from '#{queue}':
-        messages: #{inspect(messages, pretty: true)}"
+      Deleted message from '#{queue}':
+        message: #{inspect(message, pretty: true)}"
         result: #{inspect(result, pretty: true)}
       """
     )
@@ -143,17 +102,6 @@ defmodule Dawdle.Backend.SQS do
   end
 
   defp request(data), do: ExAws.request(data, region: get_config(:region))
-
-  defp id do
-    :crypto.strong_rand_bytes(16)
-    |> Base.hex_encode32(padding: false)
-  end
-
-  defp batchify(messages) do
-    Enum.map(messages, fn m ->
-      [id: id(), message_body: m]
-    end)
-  end
 
   defp normalize({:ok, _}), do: :ok
   defp normalize(result), do: result

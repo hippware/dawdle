@@ -7,15 +7,15 @@ defmodule Dawdle.Backend do
 
   @type queue :: binary()
   @type send_message :: binary()
-  @type recv_message :: %{body: binary()}
+  @type recv_message :: map()
   @type delay_secs :: non_neg_integer()
 
   @callback init() :: :ok
   @callback queue() :: queue()
-  @callback send([send_message()]) :: :ok | {:error, term()}
+  @callback send(send_message()) :: :ok | {:error, term()}
   @callback send_after(send_message(), delay_secs()) :: :ok | {:error, term()}
   @callback recv() :: {:ok, [recv_message()]} | {:error, term()}
-  @callback delete([recv_message()]) :: :ok
+  @callback delete(recv_message()) :: :ok
 
   @doc """
   Returns an initialized backend.

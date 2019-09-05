@@ -32,46 +32,14 @@ defmodule Dawdle.Backend.SQSTest do
                     _ ->
           {:ok, "testing"}
         end do
-        assert :ok = SQS.send([message])
+        assert :ok = SQS.send(message)
       end
     end
 
     test "sending a single message when there is an error" do
       with_mock ExAws, request: fn _, _ -> {:error, :testing} end do
         assert capture_log(fn ->
-                 assert {:error, :testing} = SQS.send([Lorem.sentence()])
-               end) =~ "{:error, :testing}"
-      end
-    end
-
-    test "sending multiple messages" do
-      message1 = Lorem.sentence()
-      message2 = Lorem.sentence()
-
-      with_mock ExAws,
-        request: fn %Query{
-                      action: :send_message_batch,
-                      service: :sqs,
-                      params: %{
-                        "Action" => "SendMessageBatch",
-                        "SendMessageBatchRequestEntry.1.MessageBody" =>
-                          ^message1,
-                        "SendMessageBatchRequestEntry.2.MessageBody" =>
-                          ^message2
-                      }
-                    },
-                    _ ->
-          {:ok, "testing"}
-        end do
-        assert :ok = SQS.send([message1, message2])
-      end
-    end
-
-    test "sending multiple messages when there is an error" do
-      with_mock ExAws, request: fn _, _ -> {:error, :testing} end do
-        assert capture_log(fn ->
-                 assert {:error, :testing} =
-                          SQS.send([Lorem.sentence(), Lorem.sentence()])
+                 assert {:error, :testing} = SQS.send(Lorem.sentence())
                end) =~ "{:error, :testing}"
       end
     end
@@ -163,32 +131,31 @@ defmodule Dawdle.Backend.SQSTest do
   end
 
   describe "delete/2" do
-    test "deleting messages" do
-      messages = [%{receipt_handle: 1}]
+    test "deleting a message" do
+      message = %{receipt_handle: 1}
 
       with_mock ExAws,
         request: fn %Query{
-                      action: :delete_message_batch,
+                      action: :delete_message,
                       service: :sqs,
                       params: %{
-                        "Action" => "DeleteMessageBatch",
-                        "DeleteMessageBatchRequestEntry.1.Id" => "0",
-                        "DeleteMessageBatchRequestEntry.1.ReceiptHandle" => 1
+                        "Action" => "DeleteMessage",
+                        "ReceiptHandle" => 1
                       }
                     },
                     _ ->
           {:ok, :testing}
         end do
-        assert :ok = SQS.delete(messages)
+        assert :ok = SQS.delete(message)
       end
     end
 
     test "deleting messages when there is an error" do
-      messages = [%{receipt_handle: 1}]
+      message = %{receipt_handle: 1}
 
       with_mock ExAws, request: fn _, _ -> {:error, :testing} end do
         assert capture_log(fn ->
-                 assert {:error, :testing} = SQS.delete(messages)
+                 assert {:error, :testing} = SQS.delete(message)
                end) =~ "{:error, :testing}"
       end
     end

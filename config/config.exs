@@ -16,6 +16,6 @@ config :ex_aws,
 config :dawdle, Dawdle.Backend.SQS,
   region: "us-west-2",
   queue_url:
-    "https://sqs.us-west-2.amazonaws.com/XXXXXXXXXXXX/hippware-dawdle-message-test"
+    "https://sqs.us-west-2.amazonaws.com/XXXXXXXXXXXX/hippware-dawdle-test"
 
 config :logger, level: :info

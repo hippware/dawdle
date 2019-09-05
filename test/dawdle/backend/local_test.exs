@@ -20,7 +20,7 @@ defmodule Dawdle.Backend.LocalTest do
     test "sending a single message" do
       message = Lorem.sentence()
 
-      :ok = Local.send([message])
+      :ok = Local.send(message)
 
       assert Local.count() == 1
     end
@@ -29,17 +29,8 @@ defmodule Dawdle.Backend.LocalTest do
       message1 = Lorem.sentence()
       message2 = Lorem.sentence()
 
-      :ok = Local.send([message1])
-      :ok = Local.send([message2])
-
-      assert Local.count() == 2
-    end
-
-    test "sending multiple messages" do
-      message1 = Lorem.sentence()
-      message2 = Lorem.sentence()
-
-      :ok = Local.send([message1, message2])
+      :ok = Local.send(message1)
+      :ok = Local.send(message2)
 
       assert Local.count() == 2
     end
@@ -61,7 +52,7 @@ defmodule Dawdle.Backend.LocalTest do
     test "receiving a message" do
       message = Lorem.sentence()
 
-      :ok = Local.send([message])
+      :ok = Local.send(message)
 
       assert {:ok, [message]} = Local.recv()
     end
@@ -70,7 +61,8 @@ defmodule Dawdle.Backend.LocalTest do
       message1 = Lorem.sentence()
       message2 = Lorem.sentence()
 
-      :ok = Local.send([message1, message2])
+      :ok = Local.send(message1)
+      :ok = Local.send(message2)
 
       assert {:ok, [message1, message2]} = Local.recv()
     end
@@ -84,7 +76,7 @@ defmodule Dawdle.Backend.LocalTest do
 
       Process.sleep(10)
 
-      :ok = Local.send([message])
+      :ok = Local.send(message)
     end
   end
 end
