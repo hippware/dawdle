@@ -145,24 +145,4 @@ defmodule Dawdle do
   """
   @spec call_after(duration(), fun()) :: :ok | {:error, term()}
   defdelegate call_after(delay, fun), to: Dawdle.Delay.Handler
-
-  # Old 0.4.x API (deprecated)
-
-  @doc """
-  (DEPRECATED) Set a callback to be called the eafter `delay` ms
-
-  ## Examples
-
-  ```
-  iex> Dawdle.call_after(fn _arg ->
-  ...> # Do something later...
-  ...> :ok
-  ...> end, 1, 5)
-  :ok
-  """
-  @deprecated "Use call_after/2 or signal/2 instead"
-  @spec call_after(callback(), argument(), duration()) :: :ok | {:error, term()}
-  def call_after(callback, argument, delay) do
-    call_after(delay, fn -> callback.(argument) end)
-  end
 end
