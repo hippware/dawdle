@@ -7,7 +7,7 @@ defmodule Dawdle.Backend do
 
   @type queue :: binary()
   @type send_message :: binary()
-  @type recv_message :: map()
+  @type recv_message :: %{body: binary()}
   @type delay_secs :: non_neg_integer()
 
   @callback init() :: :ok

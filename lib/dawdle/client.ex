@@ -106,12 +106,9 @@ defmodule Dawdle.Client do
 
   @impl true
   def handle_cast({:recv, messages}, state) do
-    _ =
-      Task.start(fn ->
-        timed_fun([:dawdle, :receive], %{}, %{count: length(messages)}, fn ->
-          decode_and_forward_events(messages, state)
-        end)
-      end)
+    timed_fun([:dawdle, :receive], %{}, %{count: length(messages)}, fn ->
+      decode_and_forward_events(messages, state)
+    end)
 
     {:noreply, state}
   end
@@ -149,7 +146,8 @@ defmodule Dawdle.Client do
         %{count: 1},
         fn ->
           if opts[:direct] do
-            forward_event(event, state.handlers)
+            _ = forward_event(event, state.handlers)
+            :ok
           else
             {:ok, message} = MessageEncoder.encode(event)
             delay = Keyword.get(opts, :delay, 0)
@@ -241,19 +239,28 @@ defmodule Dawdle.Client do
   defp maybe_register_handler(false, _), do: :ok
 
   defp decode_and_forward_events(messages, state) do
-    Enum.each(messages, &decode_and_forward_event(&1.body, state.handlers))
-
-    state.backend.delete(messages)
+    Enum.each(messages, &decode_and_forward_event(&1, state))
   end
 
-  defp decode_and_forward_event(message, handlers) do
-    case MessageEncoder.decode(message) do
-      {:ok, decoded} ->
-        forward_event(decoded, handlers)
+  defp decode_and_forward_event(message, state) do
+    _ = Task.start(fn -> do_decode_and_forward_event(message, state) end)
+  end
 
-      {:error, :unrecognized} ->
-        Logger.error("Dropping message in unknown format: #{message}")
-    end
+  defp do_decode_and_forward_event(message, state) do
+    _ =
+      case MessageEncoder.decode(message.body) do
+        {:ok, decoded} ->
+          results = forward_event(decoded, state.handlers)
+
+          unless Enum.all?(results, & &1) do
+            Logger.warn("Unhandled event: #{inspect(decoded, pretty: true)}")
+          end
+
+        {:error, :unrecognized} ->
+          Logger.warn("Dropping message in unknown format: #{message.body}")
+      end
+
+    state.backend.delete([message])
   end
 
   defp forward_events(events, handlers) do
@@ -261,7 +268,7 @@ defmodule Dawdle.Client do
   end
 
   defp forward_event(%object{} = event, handlers) do
-    Enum.each(handlers, &maybe_call_handler(&1, object, event))
+    Enum.map(handlers, &maybe_call_handler(&1, object, event))
   end
 
   defp maybe_call_handler({handler, options}, object, event) do
@@ -271,6 +278,10 @@ defmodule Dawdle.Client do
         %{handler: handler, options: options, object: object},
         fn -> do_call_handler(handler, event) end
       )
+
+      true
+    else
+      false
     end
   end
 
