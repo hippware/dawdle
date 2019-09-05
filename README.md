@@ -61,7 +61,7 @@ config :dawdle, Dawdle.Backend.SQS,
 ```
 
 These values can also be set by using the environment variables
-`DAWDLE_SQS_REGION`, `DAWDLE_SQS_DELAY_QUEUE`, and `DAWDLE_SQS_MESSAGE_QUEUE`.
+`DAWDLE_SQS_REGION` and `DAWDLE_SQS_QUEUE_URL`.
 
 The configuration should be managed either via `config.exs` or by setting the
 environment variables. Trying to mix the two will result in some changes being
