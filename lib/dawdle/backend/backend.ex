@@ -11,11 +11,11 @@ defmodule Dawdle.Backend do
   @type delay_secs :: non_neg_integer()
 
   @callback init() :: :ok
-  @callback queues() :: [queue()]
-  @callback send([send_message()]) :: :ok | {:error, term()}
+  @callback queue() :: queue()
+  @callback send(send_message()) :: :ok | {:error, term()}
   @callback send_after(send_message(), delay_secs()) :: :ok | {:error, term()}
-  @callback recv(queue()) :: {:ok, [recv_message()]} | {:error, term()}
-  @callback delete(queue(), [recv_message()]) :: :ok
+  @callback recv() :: {:ok, [recv_message()]} | {:error, term()}
+  @callback delete(recv_message()) :: :ok
 
   @doc """
   Returns an initialized backend.

@@ -22,25 +22,25 @@ defmodule Dawdle.Backend.Local do
   end
 
   @impl true
-  def queues, do: ["local"]
+  def queue, do: "local"
 
   @impl true
-  def send(messages), do: GenServer.cast(__MODULE__, {:send, messages})
+  def send(message), do: GenServer.cast(__MODULE__, {:send, message})
 
   @impl true
   def send_after(message, delay) do
     # The SQS backend interprets the delay as seconds, whereas here we are
     # interpreting it as milliseconds. This is to allow us to test the delay
     # feature without the tests taking forever.
-    {:ok, _} = :timer.apply_after(delay, __MODULE__, :send, [[message]])
+    {:ok, _} = :timer.apply_after(delay, __MODULE__, :send, [message])
     :ok
   end
 
   @impl true
-  def recv(_), do: GenServer.call(__MODULE__, :recv, :infinity)
+  def recv, do: GenServer.call(__MODULE__, :recv, :infinity)
 
   @impl true
-  def delete(_, _), do: :ok
+  def delete(_), do: :ok
 
   @doc false
   @spec count :: :non_neg_integer
@@ -56,13 +56,13 @@ defmodule Dawdle.Backend.Local do
   end
 
   @impl true
-  def handle_cast({:send, messages}, {[], [waiter | rest]}) do
-    GenServer.reply(waiter, {:ok, transform_messages(messages)})
+  def handle_cast({:send, message}, {[], [waiter | rest]}) do
+    GenServer.reply(waiter, {:ok, [transform_message(message)]})
     {:noreply, {[], rest}}
   end
 
-  def handle_cast({:send, messages}, {queue, []}) do
-    {:noreply, {queue ++ transform_messages(messages), []}}
+  def handle_cast({:send, message}, {queue, []}) do
+    {:noreply, {[transform_message(message) | queue], []}}
   end
 
   @impl true
@@ -71,7 +71,7 @@ defmodule Dawdle.Backend.Local do
   end
 
   def handle_call(:recv, _from, {messages, []}) do
-    {:reply, {:ok, messages}, {[], []}}
+    {:reply, {:ok, Enum.reverse(messages)}, {[], []}}
   end
 
   def handle_call(:flush, _from, _) do
@@ -82,7 +82,5 @@ defmodule Dawdle.Backend.Local do
     {:reply, length(messages), state}
   end
 
-  defp transform_messages(messages) do
-    Enum.map(messages, fn m -> %{body: m} end)
-  end
+  defp transform_message(message), do: %{body: message}
 end

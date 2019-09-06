@@ -14,49 +14,68 @@ defmodule Dawdle.BackendTest do
   end
 
   setup do
-    backend = Backend.new()
-
-    # This is cheating a little bit to get the queue names
-    message_queue = hd(backend.queues())
-    delay_queue = hd(Enum.reverse(backend.queues()))
-
-    {:ok,
-     backend: backend, message_queue: message_queue, delay_queue: delay_queue}
+    {:ok, backend: Backend.new()}
   end
 
-  test "basic send and receive", %{backend: backend, message_queue: q} do
+  test "basic send and receive", %{backend: backend} do
     message = Lorem.sentence()
 
-    assert :ok = backend.send([message])
-    assert {:ok, messages} = backend.recv(q)
-    assert :ok = backend.delete(q, messages)
+    assert :ok = backend.send(message)
+    assert {:ok, messages} = backend.recv()
+
+    for msg <- messages do
+      assert :ok = backend.delete(msg)
+    end
 
     assert Enum.any?(messages, fn %{body: msg} -> msg == message end)
   end
 
-  test "send multiple messages", %{backend: backend, message_queue: q} do
+  test "receive multiple messages", %{backend: backend} do
     message1 = Lorem.sentence()
     message2 = Lorem.sentence()
 
-    assert :ok = backend.send([message1, message2])
-    assert {:ok, messages} = backend.recv(q)
-    assert :ok = backend.delete(q, messages)
+    assert :ok = backend.send(message1)
+    assert :ok = backend.send(message2)
 
-    assert length(messages) >= 2
-
-    assert Enum.any?(messages, fn %{body: msg} -> msg == message1 end)
-    assert Enum.any?(messages, fn %{body: msg} -> msg == message2 end)
+    receive_messages(backend, message1, message2)
   end
 
-  test "send delayed message", %{backend: backend, delay_queue: q} do
+  defp receive_messages(backend, m1, m2, acc \\ [], count \\ 1)
+
+  defp receive_messages(_, _, _, _, 5) do
+    flunk("Did not receive messages after 5 tries")
+  end
+
+  defp receive_messages(backend, m1, m2, acc, count) do
+    {:ok, messages} = backend.recv()
+
+    for msg <- messages do
+      assert :ok = backend.delete(msg)
+    end
+
+    msgs = acc ++ messages
+
+    if length(msgs) >= 2 &&
+         Enum.any?(msgs, fn %{body: msg} -> msg == m1 end) &&
+         Enum.any?(msgs, fn %{body: msg} -> msg == m2 end) do
+      :ok
+    else
+      receive_messages(backend, m1, m2, msgs, count + 1)
+    end
+  end
+
+  test "send delayed message", %{backend: backend} do
     message = Lorem.sentence()
 
     assert :ok = backend.send_after(message, 1)
 
     Process.sleep(10)
 
-    assert {:ok, messages} = backend.recv(q)
-    assert :ok = backend.delete(q, messages)
+    assert {:ok, messages} = backend.recv()
+
+    for msg <- messages do
+      assert :ok = backend.delete(msg)
+    end
 
     assert Enum.any?(messages, fn %{body: msg} -> msg == message end)
   end

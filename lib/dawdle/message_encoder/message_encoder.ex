@@ -12,16 +12,16 @@ defmodule Dawdle.MessageEncoder do
   @doc """
   Encode an event into a string that is safe to enqueue.
   """
-  @callback encode(event :: any()) :: String.t()
+  @callback encode(event :: any()) :: {:ok, String.t()} | {:error, any()}
 
   @doc """
   Decode a string pulled from the queue into its original representation.
   """
-  @callback decode(message :: String.t()) :: any()
+  @callback decode(message :: String.t()) :: {:ok, any()} | {:error, any()}
 
   @default_encoder Dawdle.MessageEncoder.Term
 
-  @spec encode(any()) :: String.t()
+  @spec encode(any()) :: {:ok, String.t()} | {:error, any()}
   def encode(event) do
     encoder = get_encoder()
 
@@ -32,7 +32,7 @@ defmodule Dawdle.MessageEncoder do
     )
   end
 
-  @spec decode(String.t()) :: any()
+  @spec decode(String.t()) :: {:ok, any()} | {:error, any()}
   def decode(message) do
     encoder = get_encoder()
 

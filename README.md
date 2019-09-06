@@ -52,49 +52,44 @@ config :dawdle,
 You can also set the environment variables `DAWDLE_BACKEND` or
 `DAWDLE_START_LISTENER`.
 
-To configure your SQS queues, set queue URL in `config.exs`:
+To configure your SQS queue, set the queue URL in `config.exs`:
 
 ```elixir
 config :dawdle, Dawdle.Backend.SQS,
     region: "us-east-1",
-    delay_queue: "https://sqs.us-east-1.amazonaws.com/XXXXXXXXXXXX/my-dawdle-delay-queue",
-    message_queue: "https://sqs.us-east-1.amazonaws.com/XXXXXXXXXXXX/my-dawdle-message-queue"
+    queue_url: "https://sqs.us-east-1.amazonaws.com/XXXXXXXXXXXX/my-dawdle-message-queue"
 ```
 
 These values can also be set by using the environment variables
-`DAWDLE_SQS_REGION`, `DAWDLE_SQS_DELAY_QUEUE`, and `DAWDLE_SQS_MESSAGE_QUEUE`.
+`DAWDLE_SQS_REGION` and `DAWDLE_SQS_QUEUE_URL`.
 
 The configuration should be managed either via `config.exs` or by setting the
 environment variables. Trying to mix the two will result in some changes being
 overwritten in surprising ways. Caveat emptor.
 
 
-## Setting Up Your SQS Queues
+## Setting Up Your SQS Queue
 
-Obviously the configured SQS queues need to exist and be accessible by your
+Obviously the configured SQS queue needs to exist and be accessible by your
 application. AWS authentication is handled by
 [ex_aws](https://github.com/ex-aws/ex_aws). If you're already using `ex_aws` for
 something else, your configuration should already be good. If not, follow the
 configuration instructions on that page to set up your AWS key.
 
 Dawdle uses two queues: one for normal messages and one for delayed events. The
-message queue *must* be a FIFO Queue and the delay queue *must* be a Standard
-Queue. They can be configured with default values, __except__ that
-`Receive Message Wait Time` should be set to 20 seconds to enable long polling.
+message queue *must* be a Standard Queue. They can be configured with default
+values, __except__ that `Receive Message Wait Time` should be set to 20 seconds
+to enable long polling. It is also a good idea to set `Default Visibility Timeout`
+to a short value, like 2 seconds.
 
-The queues can be created using the `aws` CLI or from the AWS Control Panel.
+The queue can be created using the `aws` CLI or from the AWS Control Panel.
 
-Here are example commands for creating the queues from the CLI:
+Here are example commands for creating the queue from the CLI:
 
 ```
-$ aws sqs create-queue --queue-name my-dawdle-delay-queue --attributes ReceiveMessageWaitTimeSeconds=20
+$ aws sqs create-queue --queue-name my-dawdle-message-queue --attributes ReceiveMessageWaitTimeSeconds=20
 {
-    "QueueUrl": "https://xx-xxxx-x.queue.amazonaws.com/XXXXXXXXXXXX/my-dawdle-delay-queue"
-}
-
-$ aws sqs create-queue --queue-name my-dawdle-message-queue.fifo --attributes FifoQueue=true,ReceiveMessageWaitTimeSeconds=20
-{
-    "QueueUrl": "https://xx-xxxx-x.queue.amazonaws.com/XXXXXXXXXXXX/my-dawdle-message-queue.fifo"
+    "QueueUrl": "https://xx-xxxx-x.queue.amazonaws.com/XXXXXXXXXXXX/my-dawdle-message-queue"
 }
 ```
 

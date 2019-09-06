@@ -144,16 +144,6 @@ defmodule DawdleTest do
       assert_receive :handled, 25_000
     end
 
-    test "should send batched events to a single handler" do
-      t = %TestEvent{pid: self()}
-
-      :ok = Dawdle.signal([t, t, t])
-
-      assert_receive :handled, 25_000
-      assert_receive :handled, 25_000
-      assert_receive :handled, 25_000
-    end
-
     test "should send event to mulitple handlers" do
       TestRehandler.register()
 
@@ -198,16 +188,6 @@ defmodule DawdleTest do
 
       :ok = Dawdle.signal(t, direct: true)
 
-      assert_receive :handled
-    end
-
-    test "should send batched events to a single handler" do
-      t = %TestEvent{pid: self()}
-
-      :ok = Dawdle.signal([t, t, t], direct: true)
-
-      assert_receive :handled
-      assert_receive :handled
       assert_receive :handled
     end
 

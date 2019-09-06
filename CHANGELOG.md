@@ -6,7 +6,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Changed
-- Configuration requires queue URLs instead of just queue names
+- Use a single queue for all types of messages.
+- Configuration requires a queue URL instead of a queue name.
+- Removed batch signaling. This complicated the code and wasn't a good fit for
+the overall design of Dawdle.
+- Removed the deprecated 0.4.x API.
+
+### Fixed
+- Long message processing times can cause the SQS queue to be clogged.
+
+### Added
+- Log unhandled messages.
 
 ## [0.6.1] - 2019-07-29
 ### Fixed

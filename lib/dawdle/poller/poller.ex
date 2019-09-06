@@ -9,27 +9,27 @@ defmodule Dawdle.Poller do
   @base_backoff 100
   @max_backoff 120_000
 
-  @spec child_spec({module(), binary(), module()}) :: map()
-  def child_spec({source, queue, send_to}) do
+  @spec child_spec({module(), module()}) :: map()
+  def child_spec({source, send_to}) do
     %{
-      id: name(queue),
-      start: {__MODULE__, :start_link, [source, queue, send_to]},
+      id: name(source),
+      start: {__MODULE__, :start_link, [source, send_to]},
       type: :worker,
       restart: :permanent,
       shutdown: 500
     }
   end
 
-  @spec start_link(module(), binary(), module()) :: {:ok, pid()}
-  def start_link(source, queue, send_to) do
-    Task.start_link(fn -> poll(source, queue, send_to) end)
+  @spec start_link(module(), module()) :: {:ok, pid()}
+  def start_link(source, send_to) do
+    Task.start_link(fn -> poll(source, send_to) end)
   end
 
-  defp poll(source, queue, send_to, backoff \\ @base_backoff) do
+  defp poll(source, send_to, backoff \\ @base_backoff) do
     backoff =
-      case source.recv(queue) do
+      case source.recv() do
         {:ok, messages} ->
-          send_to.recv(messages, queue)
+          send_to.recv(messages)
 
           @base_backoff
 
@@ -39,11 +39,11 @@ defmodule Dawdle.Poller do
           :backoff.rand_increment(backoff, @max_backoff)
       end
 
-    poll(source, queue, send_to, backoff)
+    poll(source, send_to, backoff)
   end
 
-  defp name(queue) do
+  defp name(source) do
     # credo:disable-for-next-line Credo.Check.Warning.UnsafeToAtom
-    Module.concat(__MODULE__, queue)
+    Module.concat(__MODULE__, source)
   end
 end

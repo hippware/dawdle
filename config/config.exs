@@ -15,9 +15,7 @@ config :ex_aws,
 
 config :dawdle, Dawdle.Backend.SQS,
   region: "us-west-2",
-  delay_queue:
-    "https://sqs.us-west-2.amazonaws.com/XXXXXXXXXXXX/hippware-dawdle-delay-test",
-  message_queue:
-    "https://sqs.us-west-2.amazonaws.com/XXXXXXXXXXXX/hippware-dawdle-message-test.fifo"
+  queue_url:
+    "https://sqs.us-west-2.amazonaws.com/XXXXXXXXXXXX/hippware-dawdle-test"
 
 config :logger, level: :info

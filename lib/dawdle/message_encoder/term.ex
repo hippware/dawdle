@@ -10,15 +10,24 @@ defmodule Dawdle.MessageEncoder.Term do
 
   @impl true
   def encode(data) do
-    data
-    |> :erlang.term_to_binary()
-    |> Base.encode64()
+    string =
+      data
+      |> :erlang.term_to_binary(compressed: 6, minor_version: 2)
+      |> Base.encode64(padding: false)
+
+    {:ok, string}
   end
 
   @impl true
   def decode(string) do
-    string
-    |> Base.decode64!()
-    |> :erlang.binary_to_term()
+    term =
+      string
+      |> Base.decode64!(ignore: :whitespace, padding: false)
+      |> :erlang.binary_to_term()
+
+    {:ok, term}
+  rescue
+    ArgumentError ->
+      {:error, :unrecognized}
   end
 end
