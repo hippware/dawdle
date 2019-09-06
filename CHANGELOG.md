@@ -5,11 +5,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+
+## [0.7.0] - 2019-07-29
 ### Changed
-- Use a single queue for all types of messages.
+- Use a single standard SQS queue for all types of messages.
 - Configuration requires a queue URL instead of a queue name.
-- Removed batch signaling. This complicated the code and wasn't a good fit for
-the overall design of Dawdle.
+- Removed batch signaling.
 - Removed the deprecated 0.4.x API.
 
 ### Fixed
