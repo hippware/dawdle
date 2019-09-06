@@ -131,6 +131,17 @@ t = %MyApp.TestEvent{foo: 1, bar: 2}
 Dawdle.signal(t)
 ```
 
+It is possible to signal an event that will bypass the queue and be delivered
+directly to the appropriate handlers. The handlers will execute immediately on
+the current node, but in a separate process. Simply pass `direct: true` to
+`Dawdle.signal/2`:
+
+```elixir
+t = %MyApp.TestEvent{foo: 1, bar: 2}
+
+Dawdle.signal(t, direct: true)
+```
+
 The event handler will execute on a node running the Dawdle application with
 pollers enabled.
 
@@ -141,9 +152,9 @@ in both places.
 
 ### Experimental API
 
-There is a basic, experimental API which involves passing a simple function to
-`Dawdle.call/1`.  The function will execute on a node running the Dawdle
-application with pollers enabled.
+There is a basic, experimental API which involves passing an anonymous 
+function to `Dawdle.call/1`.  The function will execute on a node running the
+Dawdle application with pollers enabled.
 
 ```elixir
 iex> Dawdle.call(fn -> IO.puts("Hello World!") end)
@@ -166,25 +177,6 @@ This API is included for feedback and may be discontinued or extracted into a
 separate library for Dawdle 1.0.
 
 
-## 0.4.x API (DEPRECATED)
-
-Create a callback function
-```elixir
-iex> callback = fn message -> IO.inspect "Received #{message}" end
-#Function<6.99386804/1 in :erl_eval.expr/5>
-```
-
-Send your message
-```elixir
-iex(3)> Dawdle.call_after(callback, "Hello future", 2000)
-:ok
-
-# 2 seconds later
-"Received Hello future"
-```
-
-This API will be removed before Dawdle 1.0.
-
 ## Node Loss Tolerance
 
 Because the events are managed outside of your BEAM VM(s), they will be
@@ -193,22 +185,28 @@ signaled them no longer exists.
 
 ## Limits and Caveats
 
+Dawdle does not support FIFO queues. The cost paid for strict ordering is
+reduced throughput and the possibility of the queue becoming clogged if an
+event handler takes a long time. Dawdle resolves that tradeoff in favor of using
+standard queues to maximize throughput and avoid queue clogs.
+
 SQS standard queues are not millisecond-precision timing devices. Their
 maximum delay precision is 1 second, so any timeouts given in fractions of a
 second will be rounded down.
 
 SQS standard queues guarantee *at least* once delivery. In practice it's almost
 always exactly once, but your code needs to handle the possibility that a given
-delayed function call will execute multiple times.
+handler will execute multiple times.
 
-SQS does not guarantee ordering on its standard queues, so if you set two
-delayed function calls with the same duration in quick succession, it's not
-guaranteed they'll execute in the same order they were set.
+SQS does not guarantee ordering on its standard queues, and Dawdle leverages
+concurrency when dispatching events to handlers in order to keep latency low.
+So if you signal two events in quick succession, it's not guaranteed that the
+handlers will execute in the same order that the events were signaled.
 
-SQS has an upper message size limit of 256KB, and the terms sent via it
-are Base64 encoded, so avoid sending large structures in your message.
-If you need a large bit of data as part of your message, stash it
-in a persistent store first and send the key through Dawdle.
+SQS has an upper message size limit of 256KB, and the terms sent via it are
+Base64 encoded, so avoid sending large structures in your message. If you need
+a large bit of data as part of your message, stash it in a persistent store
+first and send the key through Dawdle.
 
 SQS delays are limited to 15 minutes. We handle longer delays by using
 multiple chained messages, so factor this into any capacity calculations you're
