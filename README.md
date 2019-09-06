@@ -211,3 +211,22 @@ first and send the key through Dawdle.
 SQS delays are limited to 15 minutes. We handle longer delays by using
 multiple chained messages, so factor this into any capacity calculations you're
 doing.
+
+
+## The Road To 1.0
+We are still doing some experimentation to get a feel for what works best. The
+core of Dawdle is working well, and we are mostly refining and focusing internal
+message handling. Some of the ideas on this list are speculative and may not
+make it into the 1.0 release. We are happy to listen to feedback on any of these
+features, and pull requests are always welcome.
+
+* More backends (RabbitMQ?, Redis?, GCP pub/sub?)
+* More robust local delivery of events
+* Having multiple backend queues configured at once (i.e., SQS and RabbitMQ)
+* Having multiple instances of a single backend (i.e., multiple SQS queues)
+* Allowing more discretion on when and where events are handled
+
+That last item would allow, for example, having an instance of the application
+that generates events, and another instance that only processes certain events.
+So, some events would be handled in the main application, while other, more
+expensive events, could be handled on nodes that aren't loaded with other work.
