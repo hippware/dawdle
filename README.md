@@ -24,7 +24,7 @@ Add `dawdle` to your list of dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:dawdle, "~> 0.6.0"}
+    {:dawdle, "~> 0.7.0"}
   ]
 end
 ```
@@ -152,9 +152,9 @@ in both places.
 
 ### Experimental API
 
-There is a basic, experimental API which involves passing an anonymous 
-function to `Dawdle.call/1`.  The function will execute on a node running the
-Dawdle application with pollers enabled.
+There is a basic, experimental API which involves passing an anonymous function
+to `Dawdle.call/1`.  The function will execute on a node running the Dawdle
+application with pollers enabled.
 
 ```elixir
 iex> Dawdle.call(fn -> IO.puts("Hello World!") end)
