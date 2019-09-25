@@ -1,0 +1,8 @@
+#!/bin/sh
+
+exec docker run \
+  --rm \
+  -it \
+  -p 9324:9324 \
+  -v `pwd`/elasticmq.conf:/opt/elasticmq.conf \
+  softwaremill/elasticmq
