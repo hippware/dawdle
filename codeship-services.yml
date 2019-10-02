@@ -1,0 +1,12 @@
+test-with-mq:
+  build:
+    context: .
+    dockerfile: Dockerfile.build
+    image: hippware/dawdle:build
+  cached: true
+  depends_on:
+    - elasticmq
+elasticmq:
+  image: softwaremill/elasticmq
+  ports:
+    - "9324"
