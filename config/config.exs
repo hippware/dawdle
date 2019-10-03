@@ -14,7 +14,7 @@ config :ex_aws, :sqs,
   access_key_id: "foo",
   secret_access_key: "bar",
   scheme: "http://",
-  host: "localhost",
+  host: System.get_env("SQS_HOST", "localhost"),
   port: 9324,
   region: "elasticmq"
 
