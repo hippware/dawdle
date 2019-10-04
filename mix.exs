@@ -13,6 +13,7 @@ defmodule Dawdle.MixProject do
       package: package(),
       docs: docs(),
       deps: deps(),
+      aliases: aliases(),
       source_url: "https://github.com/hippware/dawdle",
       test_coverage: [tool: ExCoveralls],
       preferred_cli_env: [
@@ -69,6 +70,12 @@ defmodule Dawdle.MixProject do
       {:poison, "~> 3.0 or ~> 4.0"},
       {:sweet_xml, "~> 0.6"},
       {:telemetry, "~> 0.4.0"}
+    ]
+  end
+
+  defp aliases do
+    [
+      ci: "check --except dialyzer"
     ]
   end
 
