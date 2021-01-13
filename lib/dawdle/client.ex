@@ -27,6 +27,13 @@ defmodule Dawdle.Client do
     GenServer.call(__MODULE__, {:signal, event, opts})
   end
 
+  @spec signal_async(Dawdle.event(), Keyword.t()) :: {:ok, pid()}
+  def signal_async(event, opts \\ []) do
+    Task.start(fn ->
+      signal(event, opts)
+    end)
+  end
+
   @spec register_all_handlers() :: :ok
   def register_all_handlers do
     auto_register_handlers()
