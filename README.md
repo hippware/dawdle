@@ -49,8 +49,16 @@ config :dawdle,
     start_listener: false
 ```
 
+Dawdle will forward the `body` value of a message to handlers.  To send the
+entire message, use the following:
+
+```elixir
+config :dawdle,
+    forward_raw_messages: true
+```
+
 You can also set the environment variables `DAWDLE_BACKEND` or
-`DAWDLE_START_LISTENER`.
+`DAWDLE_START_LISTENER` or `DAWDLE_FORWARD_RAW_MESSAGES`.
 
 To configure your SQS queue, set the queue URL in `config.exs`:
 

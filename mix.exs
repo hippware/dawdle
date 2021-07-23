@@ -42,6 +42,7 @@ defmodule Dawdle.MixProject do
       env: [
         backend: {:system, :module, "DAWDLE_BACKEND", Dawdle.Backend.Local},
         start_pollers: {:system, :boolean, "DAWDLE_START_POLLERS", false},
+        forward_raw_messages: {:system, :boolean, "DAWDLE_FORWARD_RAW_MESSAGES", false},
         "Elixir.Dawdle.Backend.SQS": [
           region: {:system, "DAWDLE_SQS_REGION", "us-west-2"},
           queue_url: {:system, "DAWDLE_SQS_QUEUE_URL", ""}

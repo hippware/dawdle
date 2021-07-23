@@ -228,8 +228,15 @@ defmodule Dawdle.Client do
   end
 
   defp do_decode_and_forward_event(message, state) do
+    body =
+      if Confex.get_env(:dawdle, :forward_raw_messages) do
+        message
+      else
+        message.body
+      end
+
     _ =
-      case MessageEncoder.decode(message.body) do
+      case MessageEncoder.decode(body) do
         {:ok, decoded} ->
           forward_event(decoded, state.handlers)
 
